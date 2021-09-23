@@ -21,7 +21,10 @@ class CreateUsersTable extends Migration
             $table->string('password');
             $table->tinyInteger('channel_type')->default(0)->comment('0 - email, 1 - twitter, 2 - google');
             $table->string('channel_id');
+            $table->tinyInteger('verified')->default(0);
+            $table->tinyInteger('role')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

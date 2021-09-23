@@ -21,6 +21,7 @@ class CreateProfilesTable extends Migration
             $table->string('website')->nullable();
             $table->bigInteger('price')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

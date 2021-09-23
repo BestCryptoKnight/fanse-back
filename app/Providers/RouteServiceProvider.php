@@ -26,7 +26,7 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string|null
      */
-    // protected $namespace = 'App\\Http\\Controllers';
+    protected $namespace = 'App\\Http\\Controllers';
 
     /**
      * Define your route model bindings, pattern filters, etc.
@@ -38,10 +38,8 @@ class RouteServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
 
         $this->routes(function () {
-            Route::prefix('api')
-                ->middleware('api')
-                ->namespace($this->namespace)
-                ->group(base_path('routes/api.php'));
+            $this->mapApiRoutes();
+            $this->mapAdminRoutes();
 
             Route::middleware('web')
                 ->namespace($this->namespace)
@@ -59,5 +57,38 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
         });
+    }
+
+    protected function mapAdminRoutes()
+    {
+        Route::prefix('admin')
+            ->middleware('api')
+            ->namespace($this->namespace . '\Admin')
+            ->group(base_path('routes/admin.php'));
+    }
+
+    /**
+     * Define the "api" routes for the application.
+     *
+     * These routes are typically stateless.
+     *
+     * @return void
+     */
+    protected function mapApiRoutes()
+    {
+        $latest = config('app.version');
+        $latest = substr($latest, 0, strpos($latest, '.'));
+
+        // v1
+        Route::prefix('v1')
+            ->middleware('api')
+            ->namespace($this->namespace . '\Api\v1')
+            ->group(base_path('routes/api/v1.php'));
+
+        // and latest version
+        Route::prefix('latest')
+            ->middleware('api')
+            ->namespace($this->namespace . '\Api\v' . $latest)
+            ->group(base_path('routes/api/v' . $latest . '.php'));
     }
 }

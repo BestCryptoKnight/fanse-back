@@ -18,7 +18,6 @@ class CreateListsTable extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('listee_id')->constrained('users')->onDelete('cascade');
             $table->bigInteger('list_id')->comment('< 1000 - system list, > 1000 - custom list');
-            $table->timestamps();
         });
     }
 
