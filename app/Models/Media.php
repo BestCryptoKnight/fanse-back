@@ -61,4 +61,13 @@ class Media extends Model
     {
         return ($this->status == self::STATUS_TMP ? 'tmp' : 'media') . '/' . $this->hash . '.' . $this->extension;
     }
+
+    public function publish()
+    {
+        if ($this->status == self::STATUS_TMP) {
+            Storage::move($this->path, 'media' . '/' . $this->hash . '.' . $this->extension);
+            $this->status = self::STATUS_ACTIVE;
+            $this->save();
+        }
+    }
 }

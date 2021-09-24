@@ -37,4 +37,14 @@ class Post extends Model
     {
         return $this->hasMany(Poll::class);
     }
+
+    public function likes()
+    {
+        return $this->belongsToMany(User::class, 'like_post');
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
 }

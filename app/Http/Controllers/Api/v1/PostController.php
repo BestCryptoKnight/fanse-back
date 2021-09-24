@@ -7,6 +7,7 @@ use App\Models\Media;
 use App\Models\Post;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Storage;
 
 class PostController extends Controller
 {
@@ -31,11 +32,11 @@ class PostController extends Controller
     {
         $this->validate($request, [
             'message' => 'required|string|max:191',
-            'media' => 'nullable|array',
-            'poll' => 'nullable|array|min:2',
+            'media' => 'nullable|array|max:' . config('misc.post.media.max'),
+            'poll' => 'nullable|array|min:2|max:' . config('misc.post.poll.max'),
             'media.*' => 'integer',
             'poll.*' => 'string|max:191',
-            'expires' => 'nullable|integer|min:1|max:30',
+            'expires' => 'nullable|integer|min:1|max:' . config('misc.post.expire.max'),
             'schedule' => 'nullable|date',
             'price' => 'nullable|integer'
         ]);
@@ -79,6 +80,9 @@ class PostController extends Controller
         $media = $request->input('media');
         if ($media) {
             $media = $user->media()->whereIn('id', $media)->get();
+            foreach ($media as $med) {
+                $med->publish();
+            }
             $post->media()->sync($media);
         }
 
@@ -88,7 +92,7 @@ class PostController extends Controller
             ]);
         }
 
-        $post->refresh();
+        $post->refresh()->load(['media', 'poll']);
         return response()->json($post);
     }
 
@@ -112,6 +116,7 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
+        // TODO: allow only owner
         $this->validate($request, [
             'message' => 'required|string|max:191',
             'media' => 'nullable|array',
@@ -182,7 +187,7 @@ class PostController extends Controller
             }
         }
 
-        $post->refresh();
+        $post->refresh()->load(['media', 'poll']);
         return response()->json($post);
     }
 
@@ -194,7 +199,16 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-        $post->delete();
+        if ($post->user_id == auth()->user()->id) {
+            $post->delete();
+        }
         return response()->json(['status' => true]);
+    }
+
+    public function like(Post $post, Request $request)
+    {
+        $user = auth()->user();
+        $res = $post->likes()->toggle([$user->id]);
+        return response()->json(['status' => count($res['attached']) > 0]);
     }
 }

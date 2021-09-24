@@ -35,5 +35,12 @@ Route::middleware(['auth:api'])->group(function () {
 
     // post
     Route::apiResource('posts', 'PostController');
+    Route::post('posts/{post}/like', 'PostController@like');
     Route::apiResource('media', 'MediaController')->only(['store', 'destroy']);
+
+    Route::get('comments/{post}', 'CommentController@index');
+    Route::get('comments/{comment}/replies', 'CommentController@replies');
+    Route::post('comments/{post}', 'CommentController@store');
+    Route::delete('comments/{comment}', 'CommentController@destroy');
+    Route::post('comments/{comment}/like', 'CommentController@like');
 });
