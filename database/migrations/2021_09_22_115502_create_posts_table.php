@@ -17,6 +17,9 @@ class CreatePostsTable extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->text('message');
+            $table->tinyInteger('expires')->nullable();
+            $table->dateTime('schedule')->nullable();
+            $table->bigInteger('price')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

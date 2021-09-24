@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateMediaMessagesTable extends Migration
+class CreateMediaMessageTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +13,7 @@ class CreateMediaMessagesTable extends Migration
      */
     public function up()
     {
-        Schema::create('media_messages', function (Blueprint $table) {
+        Schema::create('media_message', function (Blueprint $table) {
             $table->id();
             $table->foreignId('message_id')->constrained()->onDelete('cascade');
             $table->foreignId('media_id')->constrained()->onDelete('cascade');
@@ -27,6 +27,6 @@ class CreateMediaMessagesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('media_messages');
+        Schema::dropIfExists('media_message');
     }
 }

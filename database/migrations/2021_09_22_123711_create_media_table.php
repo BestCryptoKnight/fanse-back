@@ -17,7 +17,9 @@ class CreateMediaTable extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('hash');
+            $table->string('extension');
             $table->tinyInteger('type')->comment('0 - image, 1 - video, 2 - audio');
+            $table->tinyInteger('status')->default(0)->comment('0 - tmp, 1 - active');
             $table->timestamps();
             $table->softDeletes();
         });

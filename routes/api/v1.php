@@ -32,4 +32,8 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('logout', 'AuthController@logout');
         Route::get('me', 'AuthController@me');
     });
+
+    // post
+    Route::apiResource('posts', 'PostController');
+    Route::apiResource('media', 'MediaController')->only(['store', 'destroy']);
 });

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateMediaPostsTable extends Migration
+class CreateMediaPostTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,7 +13,7 @@ class CreateMediaPostsTable extends Migration
      */
     public function up()
     {
-        Schema::create('media_posts', function (Blueprint $table) {
+        Schema::create('media_post', function (Blueprint $table) {
             $table->id();
             $table->foreignId('post_id')->constrained()->onDelete('cascade');
             $table->foreignId('media_id')->constrained()->onDelete('cascade');
@@ -27,6 +27,6 @@ class CreateMediaPostsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('media_posts');
+        Schema::dropIfExists('media_post');
     }
 }
