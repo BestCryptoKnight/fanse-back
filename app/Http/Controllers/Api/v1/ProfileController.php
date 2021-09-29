@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Image;
 use Storage;
+use Hash;
 
 use function PHPSTORM_META\map;
 
@@ -99,11 +100,11 @@ class ProfileController extends Controller
 
         $user = auth()->user();
 
-        if (!Hash::check($request['password'], $user->password)) {
+        if (!Hash::check($request['old_password'], $user->password)) {
             return response()->json([
                 'message' => '',
                 'errors' => [
-                    '_' => __('errors.wrong-old-password')
+                    'old_password' => __('errors.wrong-old-password')
                 ]
             ], 422);
         }
