@@ -42,9 +42,11 @@ return [
         'allow_paid_posts_for_paid_accounts' => true
     ],
 
-    'avatar' => [
-        'filesize' => '20000',
-        'resize' => '400x400',
+    'profile' => [
+        'image' => [
+            'maxsize' => '20000',
+            'resize' => '1080x1080',
+        ],
     ],
 
     'screenshot' => [

@@ -31,12 +31,15 @@ class User extends Authenticatable implements JWTSubject
         'username',
         'password',
         'channel_type',
-        'channel_id'
+        'channel_id',
+        'bio',
+        'location',
+        'website'
     ];
 
 
     protected $visible = [
-        'username', 'name', 'role'
+        'username', 'name', 'role', 'avatar', 'cover'
     ];
 
     protected static function boot()
@@ -71,6 +74,7 @@ class User extends Authenticatable implements JWTSubject
     public function makeAuth()
     {
         $this->refresh()
+            ->makeVisible(['bio', 'location', 'website'])
             ->load([]);
     }
 
@@ -82,5 +86,15 @@ class User extends Authenticatable implements JWTSubject
     public function media()
     {
         return $this->hasMany(Media::class);
+    }
+
+    public function getAvatarAttribute($value)
+    {
+        return $value ? Storage::url('profile/avatar/' . $this->id . '.jpg') : null;
+    }
+
+    public function getCoverAttribute($value)
+    {
+        return $value ? Storage::url('profile/cover/' . $this->id . '.jpg') : null;
     }
 }

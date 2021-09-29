@@ -43,4 +43,7 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('comments/{post}', 'CommentController@store');
     Route::delete('comments/{comment}', 'CommentController@destroy');
     Route::post('comments/{comment}/like', 'CommentController@like');
+
+    Route::post('profile/image/{type}', 'ProfileController@image');
+    Route::post('profile', 'ProfileController@store');
 });
