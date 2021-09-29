@@ -28,6 +28,7 @@ class MediaController extends Controller
         $mime = $file->getMimeType();
 
         $type = null;
+        $media = null;
 
         if (strstr($mime, 'video') !== false) {
             $type = Media::TYPE_VIDEO;
@@ -37,7 +38,7 @@ class MediaController extends Controller
             $type = Media::TYPE_IMAGE;
         }
 
-        if ($type != null) {
+        if ($type !== null) {
             $media = $user->media()->create([
                 'type' => $type,
                 'extension' => $file->extension()

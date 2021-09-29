@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Media;
+use App\Models\Notification;
 use App\Models\Post;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -209,6 +210,18 @@ class PostController extends Controller
     {
         $user = auth()->user();
         $res = $post->likes()->toggle([$user->id]);
-        return response()->json(['status' => count($res['attached']) > 0]);
+
+        $status = count($res['attached']) > 0;
+        if ($status) {
+            $post->user->notifications()->firstOrCreate([
+                'type' => Notification::TYPE_LIKE,
+                'info' => [
+                    'user_id' => $user->id,
+                    'post_id' => $post->id
+                ]
+            ]);
+        }
+
+        return response()->json(['status' => $status]);
     }
 }

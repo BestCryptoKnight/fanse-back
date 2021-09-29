@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Comment;
+use App\Models\Notification;
 use App\Models\Post;
 use Illuminate\Http\Request;
 
@@ -46,6 +47,14 @@ class CommentController extends Controller
             'comment_id' => $request->input('comment_id')
         ]);
 
+        $post->user->notifications()->create([
+            'type' => Notification::TYPE_COMMENT,
+            'info' => [
+                'user_id' => $comment->user_id,
+                'post_id' => $post->id
+            ]
+        ]);
+
         return response()->json($comment);
     }
 
@@ -67,6 +76,18 @@ class CommentController extends Controller
     {
         $user = auth()->user();
         $res = $comment->likes()->toggle([$user->id]);
-        return response()->json(['status' => count($res['attached']) > 0]);
+
+        $status = count($res['attached']) > 0;
+        if ($status) {
+            $comment->post->user->notifications()->firstOrCreate([
+                'type' => Notification::TYPE_COMMENT_LIKE,
+                'info' => [
+                    'user_id' => $user->id,
+                    'comment_id' => $comment->id
+                ]
+            ]);
+        }
+
+        return response()->json(['status' => $status]);
     }
 }
