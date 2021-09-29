@@ -46,4 +46,6 @@ Route::middleware(['auth:api'])->group(function () {
 
     Route::post('profile/image/{type}', 'ProfileController@image');
     Route::post('profile', 'ProfileController@store');
+    Route::post('profile/email', 'ProfileController@email');
+    Route::post('profile/password', 'ProfileController@password');
 });

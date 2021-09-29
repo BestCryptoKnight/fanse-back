@@ -43,7 +43,7 @@ class Kernel extends ConsoleKernel
                     ->where('created_at', '<', $now->copy()->subHour())->get();
                 foreach ($media as $med) {
                     Storage::delete($med->path);
-                    $med->delete();
+                    $med->forceDelete();
                 }
             }
         )->hourly();

@@ -72,27 +72,47 @@ class ProfileController extends Controller
         return response()->json($user);
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Http\Response
-     */
-    public function show(User $user)
+    public function email(Request $request)
     {
-        //
+        $user = auth()->user();
+        $this->validate($request, [
+            'email' => 'required|email|unique:App\Models\User,username,' . $user->email
+        ]);
+        $user->email = $request['email'];
+        if ($user->channel_type == User::CHANNEL_EMAIL) {
+            $user->channel_id = $user->email;
+        }
+        $user->save();
+        // TODO: email verification
+        $user->makeAuth();
+        return response()->json($user);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, User $user)
+    public function password(Request $request)
     {
-        //
+        $this->validate($request, [
+            'old_password' => 'required|string',
+            'new_password' => 'required|min:8|confirmed',
+        ], [
+            'new_password' => __('validation.password_format')
+        ]);
+
+        $user = auth()->user();
+
+        if (!Hash::check($request['password'], $user->password)) {
+            return response()->json([
+                'message' => '',
+                'errors' => [
+                    '_' => __('errors.wrong-old-password')
+                ]
+            ], 422);
+        }
+
+        $user->password = Hash::make($request['new_password']);
+        $user->save();
+        // TODO: notify about password change via email
+        $user->makeAuth();
+        return response()->json($user);
     }
 
     /**
@@ -103,6 +123,6 @@ class ProfileController extends Controller
      */
     public function destroy(User $user)
     {
-        //
+        $user->delete();
     }
 }
