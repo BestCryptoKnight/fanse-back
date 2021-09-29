@@ -93,6 +93,21 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Media::class);
     }
 
+    public function bookmarks()
+    {
+        return $this->belongsToMany(Post::class, 'bookmarks');
+    }
+
+    public function lists()
+    {
+        return $this->hasMany(CustomList::class);
+    }
+
+    public function listees()
+    {
+        return $this->belongsToMany(User::class, 'lists', 'user_id', 'listee_id')->withPivot('list_ids')->using(ListPivot::class);
+    }
+
     public function getAvatarAttribute($value)
     {
         return $value ? Storage::url('profile/avatar/' . $this->id . '.jpg') : null;

@@ -50,4 +50,8 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('profile/password', 'ProfileController@password');
 
     Route::apiResource('notifications', 'NotificationController')->only(['index']);
+    Route::post('bookmarks/{post}', 'BookmarkController@add');
+    Route::post('lists', 'ListController@store');
+    Route::post('lists/{user}/{list_id}', 'ListController@add');
+    Route::get('lists', 'ListController@index');
 });

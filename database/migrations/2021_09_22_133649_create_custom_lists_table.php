@@ -14,7 +14,7 @@ class CreateCustomListsTable extends Migration
     public function up()
     {
         Schema::create('custom_lists', function (Blueprint $table) {
-            $table->id();
+            $table->id()->from(1000);
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('title');
             $table->timestamps();
