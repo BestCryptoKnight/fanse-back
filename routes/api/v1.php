@@ -25,7 +25,7 @@ Route::prefix('auth')->group(function () {
 // Route::post('log', 'UserController@dolog');
 
 // user
-Route::middleware(['auth:api'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
 
     // auth
     Route::prefix('auth')->group(function () {

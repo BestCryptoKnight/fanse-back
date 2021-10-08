@@ -37,30 +37,17 @@ class AuthController extends Controller
         $data['channel_type'] = User::CHANNEL_EMAIL;
         $user = User::create($data);
 
-        if (!$token = Auth::guard('api')->claims([
-            'id' => $user->id
-        ])->login($user)) {
-            return response()->json([
-                'message' => '',
-                'errors' => [
-                    '_' => __('errors.login-failed')
-                ]
-            ], 422);
-        }
+        $token = $user->createToken('main');
         $user->makeAuth();
 
         // all good so return token and user info
         return response()->json([
-            'token' => $token,
+            'token' => $token->plainTextToken,
             'user' => $user,
             'is_new' => true
         ]);
     }
-    /**
-     * Get a JWT via given credentials.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
+
     public function login(Request $request)
     {
         $this->validate($request, [
@@ -96,22 +83,12 @@ class AuthController extends Controller
                 break;
         }
 
-        // attempt to verify the credentials and create a token for the user
-        if (!$token = Auth::guard('api')->claims([
-            'id' => $user->id
-        ])->login($user)) {
-            return response()->json([
-                'message' => '',
-                'errors' => [
-                    '_' => __('errors.login-failed')
-                ]
-            ], 422);
-        }
+        $token = $user->createToken('main');
         $user->makeAuth();
 
         // all good so return token and user info
         return response()->json([
-            'token' => $token,
+            'token' => $token->plainTextToken,
             'user' => $user,
             'is_new' => $is_new
         ]);

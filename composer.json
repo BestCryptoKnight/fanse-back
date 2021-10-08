@@ -16,8 +16,7 @@
         "laravel/framework": "^8.54",
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.6",
-        "nesbot/carbon": "^2.53",
-        "tymon/jwt-auth": "^1.0"
+        "nesbot/carbon": "^2.53"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.6",
