@@ -104,7 +104,7 @@ class ProfileController extends Controller
             return response()->json([
                 'message' => '',
                 'errors' => [
-                    'old_password' => __('errors.wrong-old-password')
+                    'old_password' => [__('errors.wrong-old-password')]
                 ]
             ], 422);
         }

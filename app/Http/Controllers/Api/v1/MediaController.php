@@ -43,7 +43,10 @@ class MediaController extends Controller
                 'type' => $type,
                 'extension' => $file->extension()
             ]);
-            $file->storeAs('tmp', $media->hash . '.' . $file->extension());
+            if ($type == Media::TYPE_VIDEO) {
+            } else {
+                $file->storeAs('tmp', $media->hash . '.' . $file->extension());
+            }
         }
 
         return response()->json($media);

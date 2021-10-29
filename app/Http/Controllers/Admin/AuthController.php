@@ -36,7 +36,7 @@ class AuthController extends Controller
             return response()->json([
                 'message' => '',
                 'errors' => [
-                    '_' => __('errors.login-failed')
+                    '_' => [__('errors.login-failed')]
                 ]
             ], 422);
         }

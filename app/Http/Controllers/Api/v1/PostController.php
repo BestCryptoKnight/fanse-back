@@ -65,7 +65,7 @@ class PostController extends Controller
                 return response()->json([
                     'message' => '',
                     'errors' => [
-                        'price' => __('errors.only-free-can-paid-post')
+                        'price' => [__('errors.only-free-can-paid-post')]
                     ]
                 ], 422);
             }
@@ -139,7 +139,7 @@ class PostController extends Controller
                 return response()->json([
                     'message' => '',
                     'errors' => [
-                        'schedule' => __('errors.schedule-must-be-in-future')
+                        'schedule' => [__('errors.schedule-must-be-in-future')]
                     ]
                 ], 422);
             }
@@ -152,7 +152,7 @@ class PostController extends Controller
                 return response()->json([
                     'message' => '',
                     'errors' => [
-                        'price' => __('errors.only-free-can-paid-post')
+                        'price' => [__('errors.only-free-can-paid-post')]
                     ]
                 ], 422);
             }

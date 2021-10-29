@@ -58,7 +58,7 @@ class AuthController extends Controller
                 ]),
             ],
             'token' => 'required_unless:channel_type,' . User::CHANNEL_EMAIL,
-            'email' => 'required_if:channel_type,' . User::CHANNEL_EMAIL,
+            'email' => 'required_if:channel_type,' . User::CHANNEL_EMAIL . '|email',
             'password' => 'required_if:channel_type,' . User::CHANNEL_EMAIL
         ]);
 
@@ -73,7 +73,7 @@ class AuthController extends Controller
                     return response()->json([
                         'message' => '',
                         'errors' => [
-                            '_' => __('errors.wrong-email-or-password')
+                            '_' => [__('errors.wrong-email-or-password')]
                         ]
                     ], 422);
                 }
