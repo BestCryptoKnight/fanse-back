@@ -84,7 +84,6 @@ class PostController extends Controller
         $media = $request->input('media');
         if ($media) {
             $media = collect($media)->pluck('screenshot', 'id');
-            Log::debug(print_r($media->toArray(), true));
             $models = $user->media()->whereIn('id', $media->keys())->get();
             foreach ($models as $model) {
                 $model->publish();
@@ -182,17 +181,18 @@ class PostController extends Controller
 
         $media = $request->input('media');
         if ($media) {
-            $media = $media->pluck('screenshot', 'id');
-            $models = $user->media()->whereIn('id', array_keys($media))->get();
+            $media = collect($media)->pluck('screenshot', 'id');
+            $models = $user->media()->whereIn('id', $media->keys())->get();
             foreach ($models as $model) {
-                if ($media[$model->id]['screenshot']) {
+                $model->publish();
+                if ($media[$model->id]) {
                     $info = $model->info;
-                    $info['screenshot'] = $media[$model->id]['screenshot'];
+                    $info['screenshot'] = $media[$model->id];
                     $model->info = $info;
                     $model->save();
                 }
             }
-            $post->media()->sync(array_keys($media));
+            $post->media()->sync($media->keys());
         }
 
         $poll = $request->input('poll', []);
