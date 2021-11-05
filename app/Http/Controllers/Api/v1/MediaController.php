@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api\v1;
 use App\Http\Controllers\Controller;
 use App\Models\Media;
 use Illuminate\Http\Request;
+use FFMpeg;
+use Log;
+use Storage;
 
 class MediaController extends Controller
 {
@@ -17,6 +20,8 @@ class MediaController extends Controller
      */
     public function store(Request $request)
     {
+        set_time_limit(0);
+
         $this->validate($request, [
             'media' => 'required|file|mimes:' . config('misc.media.mimes') . '|max:' . config('misc.media.maxsize')
         ]);
@@ -38,18 +43,46 @@ class MediaController extends Controller
             $type = Media::TYPE_IMAGE;
         }
 
+        $thumbs = [];
+
         if ($type !== null) {
             $media = $user->media()->create([
                 'type' => $type,
                 'extension' => $file->extension()
             ]);
             if ($type == Media::TYPE_VIDEO) {
+                $file->storeAs('tmp', $media->hash . '/media.' . $file->extension());
+                $mediaOpener = FFMpeg::open('tmp/' . $media->hash . '/media.' . $file->extension());
+                $durationInSeconds = $mediaOpener->getDurationInSeconds();
+
+                $num = 12;
+                for ($i = 0; $i < $num; $i++) {
+                    try {
+                        $tstamp = round(($durationInSeconds / $num) * $i);
+                        if ($tstamp < 1) $tstamp = 1;
+                        if ($tstamp > $durationInSeconds - 1) $tstamp = $durationInSeconds - 1;
+                        $mediaOpener = $mediaOpener->getFrameFromSeconds($tstamp)
+                            ->export()
+                            ->save("tmp/" . $media->hash . "/thumb_{$i}.png");
+                        $thumbs[] = [
+                            'id' => $i,
+                            'url' => Storage::url('tmp') . '/' . $media->hash . "/thumb_{$i}.png"
+                        ];
+                    } catch (\Exception $e) {
+                        //Log::debug($e->getMessage());
+                        $mediaOpener = FFMpeg::open('tmp/' . $media->hash . '/media.' . $file->extension());
+                    }
+                }
             } else {
-                $file->storeAs('tmp', $media->hash . '.' . $file->extension());
+                $file->storeAs('tmp', $media->hash . '/media.' . $file->extension());
             }
         }
 
-        return response()->json($media);
+        return response()->json([
+            'media' => $media,
+            'type' => $type,
+            'thumbs' => $thumbs
+        ]);
     }
 
     /**
