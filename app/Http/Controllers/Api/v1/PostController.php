@@ -20,7 +20,7 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::query()->paginate(config('misc.page.size'));
+        $posts = Post::query()->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
         return response()->json($posts);
     }
 
@@ -87,7 +87,7 @@ class PostController extends Controller
             $models = $user->media()->whereIn('id', $media->keys())->get();
             foreach ($models as $model) {
                 $model->publish();
-                if ($media[$model->id]) {
+                if (isset($media[$model->id])) {
                     $info = $model->info;
                     $info['screenshot'] = $media[$model->id];
                     $model->info = $info;
@@ -233,7 +233,8 @@ class PostController extends Controller
                 ]
             ]);
         }
+        $post->loadCount(['likes']);
 
-        return response()->json(['status' => $status]);
+        return response()->json(['is_liked' => $status, 'likes_count' => $post->likes_count]);
     }
 }

@@ -39,7 +39,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('media', 'MediaController')->only(['store', 'destroy']);
 
     Route::get('comments/{post}', 'CommentController@index');
-    Route::get('comments/{comment}/replies', 'CommentController@replies');
     Route::post('comments/{post}', 'CommentController@store');
     Route::delete('comments/{comment}', 'CommentController@destroy');
     Route::post('comments/{comment}/like', 'CommentController@like');

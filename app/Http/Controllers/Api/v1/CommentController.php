@@ -17,13 +17,7 @@ class CommentController extends Controller
      */
     public function index(Post $post)
     {
-        $comments = $post->comments()->topLevel()->withCount(['replies'])->orderBy('created_at', 'asc')->paginate(config('misc.page.size'));
-        return response()->json($comments);
-    }
-
-    public function replies(Comment $comment)
-    {
-        $comments = $comment->replies()->orderBy('created_at', 'asc')->paginate(config('misc.page.comments'));
+        $comments = $post->comments()->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
         return response()->json($comments);
     }
 
@@ -38,13 +32,11 @@ class CommentController extends Controller
         // TODO: allow only comment on a post they have access to
         $this->validate($request, [
             'message' => 'required|string|max:191',
-            'comment_id' => 'nullable|integer|exists:comments,id'
         ]);
 
         $comment = $post->comments()->create([
             'user_id' => auth()->user()->id,
-            'message' => $request->input('message'),
-            'comment_id' => $request->input('comment_id')
+            'message' => $request->input('message')
         ]);
 
         $post->user->notifications()->create([
@@ -54,6 +46,8 @@ class CommentController extends Controller
                 'post_id' => $post->id
             ]
         ]);
+
+        $comment->load('user');
 
         return response()->json($comment);
     }
@@ -88,6 +82,8 @@ class CommentController extends Controller
             ]);
         }
 
-        return response()->json(['status' => $status]);
+        $comment->loadCount(['likes']);
+
+        return response()->json(['is_liked' => $status, 'likes_count' => $comment->likes_count]);
     }
 }

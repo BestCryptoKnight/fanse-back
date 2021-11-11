@@ -55,7 +55,7 @@ class MediaController extends Controller
                 $mediaOpener = FFMpeg::open('tmp/' . $media->hash . '/media.' . $file->extension());
                 $durationInSeconds = $mediaOpener->getDurationInSeconds();
 
-                $num = 12;
+                $num = 6;
                 for ($i = 0; $i < $num; $i++) {
                     try {
                         $tstamp = round(($durationInSeconds / $num) * $i);
