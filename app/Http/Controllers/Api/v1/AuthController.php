@@ -37,30 +37,17 @@ class AuthController extends Controller
         $data['channel_type'] = User::CHANNEL_EMAIL;
         $user = User::create($data);
 
-        if (!$token = Auth::guard('api')->claims([
-            'id' => $user->id
-        ])->login($user)) {
-            return response()->json([
-                'message' => '',
-                'errors' => [
-                    '_' => __('errors.login-failed')
-                ]
-            ], 422);
-        }
+        $token = $user->createToken('main');
         $user->makeAuth();
 
         // all good so return token and user info
         return response()->json([
-            'token' => $token,
+            'token' => $token->plainTextToken,
             'user' => $user,
             'is_new' => true
         ]);
     }
-    /**
-     * Get a JWT via given credentials.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
+
     public function login(Request $request)
     {
         $this->validate($request, [
@@ -71,7 +58,7 @@ class AuthController extends Controller
                 ]),
             ],
             'token' => 'required_unless:channel_type,' . User::CHANNEL_EMAIL,
-            'email' => 'required_if:channel_type,' . User::CHANNEL_EMAIL,
+            'email' => 'required_if:channel_type,' . User::CHANNEL_EMAIL . '|email',
             'password' => 'required_if:channel_type,' . User::CHANNEL_EMAIL
         ]);
 
@@ -86,7 +73,7 @@ class AuthController extends Controller
                     return response()->json([
                         'message' => '',
                         'errors' => [
-                            '_' => __('errors.wrong-email-or-password')
+                            '_' => [__('errors.wrong-email-or-password')]
                         ]
                     ], 422);
                 }
@@ -96,22 +83,12 @@ class AuthController extends Controller
                 break;
         }
 
-        // attempt to verify the credentials and create a token for the user
-        if (!$token = Auth::guard('api')->claims([
-            'id' => $user->id
-        ])->login($user)) {
-            return response()->json([
-                'message' => '',
-                'errors' => [
-                    '_' => __('errors.login-failed')
-                ]
-            ], 422);
-        }
+        $token = $user->createToken('main');
         $user->makeAuth();
 
         // all good so return token and user info
         return response()->json([
-            'token' => $token,
+            'token' => $token->plainTextToken,
             'user' => $user,
             'is_new' => $is_new
         ]);
@@ -136,7 +113,7 @@ class AuthController extends Controller
      */
     public function logout()
     {
-        auth()->logout();
+        auth()->user()->currentAccessToken()->delete();
         return response()->json(['status' => true]);
     }
 

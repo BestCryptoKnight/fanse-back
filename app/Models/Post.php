@@ -9,7 +9,7 @@ class Post extends Model
 {
     use SoftDeletes;
 
-    protected $with = ['media', 'poll'];
+    protected $with = ['media', 'poll', 'user', 'liked'];
 
     protected $fillable = [
         'message', 'expires', 'schedule', 'price'
@@ -20,8 +20,14 @@ class Post extends Model
     ];
 
     protected $visible = [
-        'id', 'message', 'expires', 'price', 'poll', 'media', 'created_at'
+        'id', 'message', 'expires', 'price', 'poll', 'media', 'created_at', 'user', 'likes_count', 'comments_count', 'is_liked'
     ];
+
+    protected $withCount = [
+        'likes', 'comments'
+    ];
+
+    protected $appends = ['is_liked'];
 
     public function user()
     {
@@ -43,8 +49,19 @@ class Post extends Model
         return $this->belongsToMany(User::class, 'like_post');
     }
 
+    public function liked()
+    {
+        $user = auth()->user();
+        return $user ? $this->likes()->where('users.id', $user->id) : [];
+    }
+
     public function comments()
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public function getIsLikedAttribute()
+    {
+        return count($this->liked) > 0;
     }
 }

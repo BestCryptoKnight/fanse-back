@@ -8,9 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Storage;
 use Auth;
 use Illuminate\Support\Str;
-use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class Admin extends Authenticatable implements JWTSubject
+class Admin extends Authenticatable
 {
     use Notifiable;
     use SoftDeletes;
@@ -21,14 +20,4 @@ class Admin extends Authenticatable implements JWTSubject
     protected $fillable = [
         'username', 'password', 'role'
     ];
-
-    public function getJWTIdentifier()
-    {
-        return $this->getKey();
-    }
-
-    public function getJWTCustomClaims()
-    {
-        return [];
-    }
 }

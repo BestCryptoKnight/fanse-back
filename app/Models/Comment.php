@@ -10,34 +10,32 @@ class Comment extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'user_id', 'comment_id', 'message'
+        'user_id', 'message'
     ];
 
     protected $visible = [
-        'id', 'comment_id', 'message', 'created_at', 'user', 'likes_count', 'replies_count'
+        'id', 'message', 'created_at', 'user', 'likes_count', 'is_liked'
     ];
 
     protected $with = [
-        'user'
+        'user', 'liked'
     ];
 
     protected $withCount = [
         'likes'
     ];
 
+    protected $appends = ['is_liked'];
+
     public function likes()
     {
         return $this->belongsToMany(User::class, 'comment_like');
     }
 
-    public function replies()
+    public function liked()
     {
-        return $this->hasMany(Comment::class);
-    }
-
-    public function scopeTopLevel($query)
-    {
-        $query->whereNull('comment_id');
+        $user = auth()->user();
+        return $user ? $this->likes()->where('users.id', $user->id) : [];
     }
 
     public function user()
@@ -48,5 +46,10 @@ class Comment extends Model
     public function post()
     {
         return $this->belongsTo(Post::class);
+    }
+
+    public function getIsLikedAttribute()
+    {
+        return count($this->liked) > 0;
     }
 }

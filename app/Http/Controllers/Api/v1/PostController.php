@@ -9,6 +9,7 @@ use App\Models\Post;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Storage;
+use Log;
 
 class PostController extends Controller
 {
@@ -19,7 +20,7 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::query()->paginate(config('misc.page.size'));
+        $posts = Post::query()->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
         return response()->json($posts);
     }
 
@@ -35,7 +36,9 @@ class PostController extends Controller
             'message' => 'required|string|max:191',
             'media' => 'nullable|array|max:' . config('misc.post.media.max'),
             'poll' => 'nullable|array|min:2|max:' . config('misc.post.poll.max'),
-            'media.*' => 'integer',
+            'media.*' => 'array',
+            'media.*.id' => 'integer',
+            'media.*.screenshot' => 'nullable|integer',
             'poll.*' => 'string|max:191',
             'expires' => 'nullable|integer|min:1|max:' . config('misc.post.expire.max'),
             'schedule' => 'nullable|date',
@@ -65,7 +68,7 @@ class PostController extends Controller
                 return response()->json([
                     'message' => '',
                     'errors' => [
-                        'price' => __('errors.only-free-can-paid-post')
+                        'price' => [__('errors.only-free-can-paid-post')]
                     ]
                 ], 422);
             }
@@ -80,14 +83,22 @@ class PostController extends Controller
 
         $media = $request->input('media');
         if ($media) {
-            $media = $user->media()->whereIn('id', $media)->get();
-            foreach ($media as $med) {
-                $med->publish();
+            $media = collect($media)->pluck('screenshot', 'id');
+            $models = $user->media()->whereIn('id', $media->keys())->get();
+            foreach ($models as $model) {
+                $model->publish();
+                if (isset($media[$model->id])) {
+                    $info = $model->info;
+                    $info['screenshot'] = $media[$model->id];
+                    $model->info = $info;
+                    $model->save();
+                }
             }
-            $post->media()->sync($media);
+            $post->media()->sync($media->keys());
         }
 
-        foreach ($request->input('poll', []) as $option) {
+        $poll = $request->input('poll', []);
+        foreach ($poll as $option) {
             $post->poll()->create([
                 'option' => $option
             ]);
@@ -121,9 +132,11 @@ class PostController extends Controller
         $this->validate($request, [
             'message' => 'required|string|max:191',
             'media' => 'nullable|array',
+            'media.*' => 'array',
+            'media.*.id' => 'integer',
+            'media.*.screenshot' => 'integer',
             'poll' => 'nullable|array|min:2',
             'media.*' => 'integer',
-            'poll.*' => 'string|max:191',
             'expires' => 'nullable|integer|min:1|max:30',
             'schedule' => 'nullable|date',
             'price' => 'nullable|integer'
@@ -139,7 +152,7 @@ class PostController extends Controller
                 return response()->json([
                     'message' => '',
                     'errors' => [
-                        'schedule' => __('errors.schedule-must-be-in-future')
+                        'schedule' => [__('errors.schedule-must-be-in-future')]
                     ]
                 ], 422);
             }
@@ -152,7 +165,7 @@ class PostController extends Controller
                 return response()->json([
                     'message' => '',
                     'errors' => [
-                        'price' => __('errors.only-free-can-paid-post')
+                        'price' => [__('errors.only-free-can-paid-post')]
                     ]
                 ], 422);
             }
@@ -168,24 +181,23 @@ class PostController extends Controller
 
         $media = $request->input('media');
         if ($media) {
-            $media = $user->media()->whereIn('id', $media)->get();
-            $post->media()->sync($media);
+            $media = collect($media)->pluck('screenshot', 'id');
+            $models = $user->media()->whereIn('id', $media->keys())->get();
+            foreach ($models as $model) {
+                $model->publish();
+                if ($media[$model->id]) {
+                    $info = $model->info;
+                    $info['screenshot'] = $media[$model->id];
+                    $model->info = $info;
+                    $model->save();
+                }
+            }
+            $post->media()->sync($media->keys());
         }
 
-        $ex_poll = $post->poll->pluck('option')->toArray();
-        $in_poll = $request->input('poll', []);
-        foreach ($post->poll as $poll) {
-            if (!in_array($poll->option, $in_poll)) {
-                $poll->delete();
-            }
-        }
-
-        foreach ($in_poll as $option) {
-            if (!in_array($option, $ex_poll)) {
-                $post->poll()->create([
-                    'option' => $option
-                ]);
-            }
+        $poll = $request->input('poll', []);
+        if (!count($poll) && $post->poll) {
+            $post->poll()->detach($post->poll->id);
         }
 
         $post->refresh()->load(['media', 'poll']);
@@ -221,7 +233,8 @@ class PostController extends Controller
                 ]
             ]);
         }
+        $post->loadCount(['likes']);
 
-        return response()->json(['status' => $status]);
+        return response()->json(['is_liked' => $status, 'likes_count' => $post->likes_count]);
     }
 }
