@@ -77,14 +77,28 @@ class ProfileController extends Controller
     {
         $user = auth()->user();
         $this->validate($request, [
-            'email' => 'required|email|unique:App\Models\User,username,' . $user->email
+            'email' => 'required|email|unique:App\Models\User,email,' . $user->email,
+            'password' => 'required|string',
         ]);
-        $user->email = $request['email'];
-        if ($user->channel_type == User::CHANNEL_EMAIL) {
-            $user->channel_id = $user->email;
+
+        if (!Hash::check($request['password'], $user->password)) {
+            return response()->json([
+                'message' => '',
+                'errors' => [
+                    'password' => [__('errors.wrong-password')]
+                ]
+            ], 422);
         }
-        $user->save();
-        // TODO: email verification
+
+        if ($user->email != $request['email']) {
+            $user->email = $request['email'];
+            if ($user->channel_type == User::CHANNEL_EMAIL) {
+                $user->channel_id = $user->email;
+            }
+            $user->save();
+            $user->sendEmailVerificationNotification();
+        }
+
         $user->makeAuth();
         return response()->json($user);
     }

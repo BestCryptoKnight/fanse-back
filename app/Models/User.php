@@ -7,12 +7,13 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Storage;
 use Auth;
+use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, SoftDeletes, Notifiable;
+    use HasApiTokens, SoftDeletes, Notifiable, MustVerifyEmail;
 
     const ROLE_USER = 0;
     const ROLE_CREATOR = 1;
@@ -59,7 +60,7 @@ class User extends Authenticatable
     public function makeAuth()
     {
         $this->refresh()
-            ->makeVisible(['bio', 'location', 'website'])
+            ->makeVisible(['bio', 'location', 'website', 'email'])
             ->load([]);
     }
 

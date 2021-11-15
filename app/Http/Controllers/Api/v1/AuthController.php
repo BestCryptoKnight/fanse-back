@@ -24,7 +24,6 @@ class AuthController extends Controller
             'password' => [
                 'required',
                 'min:8',
-                'confirmed'
             ],
             'name' => 'required|min:3'
         ], [
@@ -36,6 +35,8 @@ class AuthController extends Controller
         $data['channel_id'] = $data['email'];
         $data['channel_type'] = User::CHANNEL_EMAIL;
         $user = User::create($data);
+
+        $user->sendEmailVerificationNotification();
 
         $token = $user->createToken('main');
         $user->makeAuth();
