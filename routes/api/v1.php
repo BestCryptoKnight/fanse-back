@@ -36,6 +36,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // post
     Route::apiResource('posts', 'PostController');
     Route::post('posts/{post}/like', 'PostController@like');
+    Route::get('posts/user/{user}', 'PostController@user');
     Route::apiResource('media', 'MediaController')->only(['store', 'destroy']);
 
     Route::get('comments/{post}', 'CommentController@index');
@@ -53,4 +54,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('lists', 'ListController@store');
     Route::post('lists/{user}/{list_id}', 'ListController@add');
     Route::get('lists', 'ListController@index');
+
+    Route::get('users/{username}', 'UserController@show');
 });

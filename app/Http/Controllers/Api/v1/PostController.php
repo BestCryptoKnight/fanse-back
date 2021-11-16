@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Media;
 use App\Models\Notification;
 use App\Models\Post;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Storage;
@@ -21,6 +22,12 @@ class PostController extends Controller
     public function index()
     {
         $posts = Post::query()->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+        return response()->json($posts);
+    }
+
+    public function user(User $user)
+    {
+        $posts = $user->posts()->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
         return response()->json($posts);
     }
 
