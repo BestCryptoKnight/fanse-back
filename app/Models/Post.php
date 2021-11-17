@@ -20,14 +20,14 @@ class Post extends Model
     ];
 
     protected $visible = [
-        'id', 'message', 'expires', 'price', 'poll', 'media', 'created_at', 'user', 'likes_count', 'comments_count', 'is_liked'
+        'id', 'message', 'expires', 'price', 'poll', 'media', 'created_at', 'user', 'likes_count', 'comments_count', 'is_liked', 'is_bookmarked'
     ];
 
     protected $withCount = [
         'likes', 'comments'
     ];
 
-    protected $appends = ['is_liked'];
+    protected $appends = ['is_liked', 'is_bookmarked'];
 
     public function user()
     {
@@ -55,6 +55,12 @@ class Post extends Model
         return $user ? $this->likes()->where('users.id', $user->id) : [];
     }
 
+    public function bookmarked()
+    {
+        $user = auth()->user();
+        return $user ? $this->belongsToMany(User::class, 'bookmarks')->where('users.id', $user->id) : [];
+    }
+
     public function comments()
     {
         return $this->hasMany(Comment::class);
@@ -63,5 +69,10 @@ class Post extends Model
     public function getIsLikedAttribute()
     {
         return count($this->liked) > 0;
+    }
+
+    public function getIsBookmarkedAttribute()
+    {
+        return count($this->bookmarked) > 0;
     }
 }

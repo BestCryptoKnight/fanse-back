@@ -6,4 +6,5 @@ return [
     'only-free-can-paid-post' => 'Only account with free subscription can make paid posts.',
     'wrong-old-password' => 'Current password is wrong.',
     'wrong-password' => 'Password is wrong.',
+    'list-title-taken' => 'List already exists.',
 ];

@@ -51,9 +51,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::apiResource('notifications', 'NotificationController')->only(['index']);
     Route::post('bookmarks/{post}', 'BookmarkController@add');
+    Route::get('bookmarks', 'BookmarkController@index');
     Route::post('lists', 'ListController@store');
     Route::post('lists/{user}/{list_id}', 'ListController@add');
     Route::get('lists', 'ListController@index');
+    Route::get('lists/{user}', 'ListController@indexUser');
 
     Route::get('users/{username}', 'UserController@show');
 });

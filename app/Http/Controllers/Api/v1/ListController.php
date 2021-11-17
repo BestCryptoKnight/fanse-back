@@ -8,14 +8,22 @@ use Illuminate\Http\Request;
 
 class ListController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $user = auth()->user();
-        $lists = $user->lists;
-        $users = $user->listees()->paginate(config('misc.page.size'));
         return response()->json([
-            'lists' => $lists,
-            'users' => $users
+            'lists' => $user->lists
+        ]);
+    }
+
+    public function indexUser(User $user)
+    {
+        $lists = auth()->user()->lists;
+        $contains = auth()->user()->listees()->where('lists.user_id', $user->id)->first();
+
+        return response()->json([
+            'lists' => $user->lists,
+            'contains' => $contains ? $contains->pivot->list_ids : []
         ]);
     }
 
@@ -25,7 +33,18 @@ class ListController extends Controller
             'title' => 'required|string|max:191'
         ]);
 
-        $list = auth()->user()->lists()->create([
+        $user = auth()->user();
+
+        if ($user->lists()->where('title', $request['title'])->exists()) {
+            return response()->json([
+                'message' => '',
+                'errors' => [
+                    'title' => [__('errors.list-title-taken')]
+                ]
+            ], 422);
+        }
+
+        $list = $user->lists()->create([
             'title' => $request['title']
         ]);
 
@@ -44,7 +63,7 @@ class ListController extends Controller
         } else {
             $ids = $entry->pivot->list_ids;
             if (in_array($list_id, $ids)) {
-                $ids = array_diff($ids, [$list_id]);
+                $ids = array_values(array_diff($ids, [$list_id]));
             } else {
                 $status = true;
                 $ids[] = $list_id;
