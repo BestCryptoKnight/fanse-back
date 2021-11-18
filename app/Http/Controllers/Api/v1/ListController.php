@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomList;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -11,19 +12,47 @@ class ListController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $original = collect([
+            CustomList::bookmarks($user)
+        ]);
+
+        $lists = $original->concat($user->lists()->with('user')->get());
+        $lists->map(function ($model) {
+            $model->append('listees_count');
+        });
         return response()->json([
-            'lists' => $user->lists
+            'lists' => $lists
         ]);
     }
 
     public function indexUser(User $user)
     {
-        $lists = auth()->user()->lists;
-        $contains = auth()->user()->listees()->where('lists.user_id', $user->id)->first();
+        $user = auth()->user();
+
+        $original = collect([
+            CustomList::bookmarks($user)
+        ]);
+
+        $lists = $original->concat($user->lists()->with('user')->get());
+        $lists->map(function ($model) {
+            $model->append('listees_count');
+        });
+
+        $contains = $user->listees()->where('lists.user_id', $user->id)->first();
 
         return response()->json([
-            'lists' => $user->lists,
+            'lists' => $lists,
             'contains' => $contains ? $contains->pivot->list_ids : []
+        ]);
+    }
+
+    public function indexList(int $id)
+    {
+        $list = $id >= 1000 ? CustomList::findOrFail($id) : CustomList::bookmarks(auth()->user());
+        $users = auth()->user()->listees()->whereJsonContains('list_ids', $id)->paginate(config('misc.page.size'));
+        return response()->json([
+            'list' => $list,
+            'users' => $users
         ]);
     }
 

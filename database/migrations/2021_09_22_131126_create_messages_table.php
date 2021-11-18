@@ -16,8 +16,10 @@ class CreateMessagesTable extends Migration
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('from_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('party_id')->constrained('users')->onDelete('cascade');
             $table->text('message');
+            $table->boolean('read')->default(false);
+            $table->boolean('direction')->comment('0 - out, 1 - in');
             $table->timestamps();
             $table->softDeletes();
         });

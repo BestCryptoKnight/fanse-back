@@ -94,6 +94,11 @@ class User extends Authenticatable
         return $this->belongsToMany(User::class, 'lists', 'user_id', 'listee_id')->withPivot('list_ids')->using(ListPivot::class);
     }
 
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
     public function getAvatarAttribute($value)
     {
         return $value ? Storage::url('profile/avatar/' . $this->id . '.jpg') : null;

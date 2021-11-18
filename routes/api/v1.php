@@ -55,7 +55,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('lists', 'ListController@store');
     Route::post('lists/{user}/{list_id}', 'ListController@add');
     Route::get('lists', 'ListController@index');
-    Route::get('lists/{user}', 'ListController@indexUser');
+    Route::get('lists/user/{user}', 'ListController@indexUser');
+    Route::get('lists/{id}', 'ListController@indexList');
 
     Route::get('users/{username}', 'UserController@show');
+
+    Route::post('messages/{user}', 'MessageController@store');
+    Route::get('messages/{user}', 'MessageController@indexChat');
+    Route::get('messages', 'MessageController@index');
+    Route::delete('messages/{user}', 'MessageController@destroy');
 });
