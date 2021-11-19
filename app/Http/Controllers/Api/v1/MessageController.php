@@ -29,7 +29,10 @@ class MessageController extends Controller
     {
         $current = auth()->user();
         $messages = $current->messages()->with('party')->where('party_id', $user->id)->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
-        return response()->json($messages);
+        return response()->json([
+            'party' => $user,
+            'messages' => $messages
+        ]);
     }
 
     /**
@@ -76,7 +79,7 @@ class MessageController extends Controller
             $messageTo->media()->sync($media->keys());
         }
 
-        $messageFrom->refresh()->load(['media']);
+        $messageFrom->refresh()->load(['media', 'party']);
         return response()->json($messageFrom);
     }
 
