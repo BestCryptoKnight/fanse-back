@@ -35,6 +35,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // post
     Route::apiResource('posts', 'PostController');
+    Route::post('posts/{post}/{poll}/vote', 'PostController@vote');
     Route::post('posts/{post}/like', 'PostController@like');
     Route::get('posts/user/{user}', 'PostController@user');
     Route::apiResource('media', 'MediaController')->only(['store', 'destroy']);

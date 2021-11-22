@@ -20,14 +20,14 @@ class Post extends Model
     ];
 
     protected $visible = [
-        'id', 'message', 'expires', 'price', 'poll', 'media', 'created_at', 'user', 'likes_count', 'comments_count', 'is_liked', 'is_bookmarked'
+        'id', 'message', 'expires', 'price', 'poll', 'media', 'created_at', 'user', 'likes_count', 'comments_count', 'is_liked', 'is_bookmarked', 'has_voted'
     ];
 
     protected $withCount = [
         'likes', 'comments'
     ];
 
-    protected $appends = ['is_liked', 'is_bookmarked'];
+    protected $appends = ['is_liked', 'is_bookmarked', 'has_voted'];
 
     public function user()
     {
@@ -74,5 +74,15 @@ class Post extends Model
     public function getIsBookmarkedAttribute()
     {
         return count($this->bookmarked) > 0;
+    }
+
+    public function getHasVotedAttribute()
+    {
+        foreach ($this->poll as $p) {
+            if ($p->hasVoted) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1;
 use App\Http\Controllers\Controller;
 use App\Models\Media;
 use App\Models\Notification;
+use App\Models\Poll;
 use App\Models\Post;
 use App\Models\User;
 use Carbon\Carbon;
@@ -243,5 +244,12 @@ class PostController extends Controller
         $post->loadCount(['likes']);
 
         return response()->json(['is_liked' => $status, 'likes_count' => $post->likes_count]);
+    }
+
+    public function vote(Post $post, Poll $poll)
+    {
+        $poll->votes()->attach(auth()->user()->id);
+        $post->refresh();
+        return response()->json($post);
     }
 }
