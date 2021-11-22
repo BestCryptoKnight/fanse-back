@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Log;
 
 class MessageController extends Controller
 {
@@ -28,7 +29,7 @@ class MessageController extends Controller
     public function indexChat(User $user)
     {
         $current = auth()->user();
-        $messages = $current->messages()->with('party')->where('party_id', $user->id)->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+        $messages = $current->messages()->with(['party', 'media'])->where('party_id', $user->id)->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
         return response()->json([
             'party' => $user,
             'messages' => $messages
@@ -48,24 +49,27 @@ class MessageController extends Controller
         $this->validate($request, [
             'message' => 'required|max:191',
             'media' => 'nullable|array|max:' . config('misc.post.media.max'),
+            'price' => 'nullable|integer'
         ]);
 
         $messageFrom = $current->messages()->create([
             'message' => $request['message'],
             'party_id' => $user->id,
-            'direction' => false
+            'direction' => false,
+            'price' => $request->input('price')
         ]);
 
         $messageTo = $user->messages()->create([
             'message' => $request['message'],
             'party_id' => $current->id,
-            'direction' => true
+            'direction' => true,
+            'price' => $request->input('price')
         ]);
 
         $media = $request->input('media');
         if ($media) {
             $media = collect($media)->pluck('screenshot', 'id');
-            $models = $user->media()->whereIn('id', $media->keys())->get();
+            $models = $current->media()->whereIn('id', $media->keys())->get();
             foreach ($models as $model) {
                 $model->publish();
                 if (isset($media[$model->id])) {

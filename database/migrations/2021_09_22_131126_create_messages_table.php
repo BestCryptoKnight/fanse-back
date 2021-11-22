@@ -20,6 +20,7 @@ class CreateMessagesTable extends Migration
             $table->text('message');
             $table->boolean('read')->default(false);
             $table->boolean('direction')->comment('0 - out, 1 - in');
+            $table->bigInteger('price')->unsigned()->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
