@@ -28,6 +28,7 @@ class CreateUsersTable extends Migration
             $table->string('website')->nullable();
             $table->tinyInteger('cover')->default(0);
             $table->tinyInteger('avatar')->default(0);
+            $table->bigInteger('price')->unsigned()->default(0);
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

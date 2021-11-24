@@ -65,4 +65,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('messages/{user}', 'MessageController@indexChat');
     Route::get('messages', 'MessageController@index');
     Route::delete('messages/{user}', 'MessageController@destroy');
+
+    Route::post('price', 'PaymentController@price');
+    Route::post('price/bundle', 'PaymentController@bundleStore');
+    Route::put('price/bundle/{bundle}', 'PaymentController@bundleUpdate');
+    Route::delete('price/bundle/{bundle}', 'PaymentController@bundleDestroy');
 });

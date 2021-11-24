@@ -39,7 +39,14 @@ return [
     ],
 
     'pricing' => [
-        'allow_paid_posts_for_paid_accounts' => true
+        'allow_paid_posts_for_paid_accounts' => true,
+        'caps' => [
+            'subscription' => 50,
+            'tip' => 100,
+            'post' => 100,
+            'message' => 100,
+            'discount' => 50,
+        ]
     ],
 
     'profile' => [

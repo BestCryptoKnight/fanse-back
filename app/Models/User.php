@@ -35,13 +35,16 @@ class User extends Authenticatable
         'channel_id',
         'bio',
         'location',
-        'website'
+        'website',
+        'price'
     ];
-
 
     protected $visible = [
-        'id', 'username', 'name', 'role', 'avatar', 'cover'
+        'id', 'username', 'name', 'role', 'avatar', 'cover', 'price', 'is_subscribed', 'bundles'
     ];
+
+    protected $with = ['subscribed'];
+    protected $appends = ['is_subscribed', 'is_free'];
 
     protected static function boot()
     {
@@ -61,7 +64,7 @@ class User extends Authenticatable
     {
         $this->refresh()
             ->makeVisible(['bio', 'location', 'website', 'email'])
-            ->load([]);
+            ->load(['bundles']);
     }
 
     public function posts()
@@ -97,6 +100,37 @@ class User extends Authenticatable
     public function messages()
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function bundles()
+    {
+        return $this->hasMany(Bundle::class);
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function subscribers()
+    {
+        return $this->belongsToMany(User::class, 'subscriptions', 'sub_id', 'user_id');
+    }
+
+    public function subscribed()
+    {
+        $user = auth()->user();
+        return $this->subscribers()->where('subscriptions.user_id', $user ? $user->id : null);
+    }
+
+    public function getIsSubscribedAttribute()
+    {
+        return count($this->subscribed) > 0;
+    }
+
+    public function getIsFreeAttribute()
+    {
+        return $this->price > 0;
     }
 
     public function getAvatarAttribute($value)
