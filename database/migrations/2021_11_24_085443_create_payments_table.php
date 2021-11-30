@@ -16,11 +16,13 @@ class CreatePaymentsTable extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->tinyInteger('type')->unsigned();
             $table->string('hash');
-            $table->string('token');
-            $table->tinyInteger('gateway')->unsigned();
+            $table->string('token')->nullable();
+            $table->string('gateway');
             $table->bigInteger('amount')->unsigned();
             $table->json('info')->nullable();
+            $table->tinyInteger('status')->unsigned()->default(0);
             $table->timestamps();
             $table->softDeletes();
         });

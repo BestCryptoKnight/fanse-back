@@ -19,6 +19,7 @@
         "laravel/sanctum": "^2.11",
         "laravel/tinker": "^2.6",
         "nesbot/carbon": "^2.53",
+        "paypal/rest-api-sdk-php": "^1.14",
         "pbmedia/laravel-ffmpeg": "^7.5"
     },
     "require-dev": {

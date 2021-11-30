@@ -123,6 +123,11 @@ class User extends Authenticatable
         return $this->subscribers()->where('subscriptions.user_id', $user ? $user->id : null);
     }
 
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function getIsSubscribedAttribute()
     {
         return count($this->subscribed) > 0;
@@ -130,7 +135,7 @@ class User extends Authenticatable
 
     public function getIsFreeAttribute()
     {
-        return $this->price > 0;
+        return $this->price == 0;
     }
 
     public function getAvatarAttribute($value)

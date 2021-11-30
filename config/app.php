@@ -179,6 +179,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         ProtoneMedia\LaravelFFMpeg\Support\ServiceProvider::class,
         App\Providers\FortifyServiceProvider::class,
+        App\Providers\PaymentServiceProvider::class,
 
     ],
 
@@ -233,7 +234,8 @@ return [
         'URL' => Illuminate\Support\Facades\URL::class,
         'Validator' => Illuminate\Support\Facades\Validator::class,
         'View' => Illuminate\Support\Facades\View::class,
-        'FFMpeg' => ProtoneMedia\LaravelFFMpeg\Support\FFMpeg::class
+        'FFMpeg' => ProtoneMedia\LaravelFFMpeg\Support\FFMpeg::class,
+        'Payment' => App\Providers\Payment\Facades\Payment::class,
 
     ],
 

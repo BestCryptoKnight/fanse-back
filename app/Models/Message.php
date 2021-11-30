@@ -18,6 +18,8 @@ class Message extends Model
         'read' => 'boolean',
     ];
 
+    protected $with = ['accessed'];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -31,5 +33,29 @@ class Message extends Model
     public function media()
     {
         return $this->belongsToMany(Media::class);
+    }
+
+    public function access()
+    {
+        return $this->belongsToMany(User::class, 'access_message');
+    }
+
+    public function accessed()
+    {
+        $user = auth()->user();
+        return $this->belongsToMany(User::class, 'access_message')->where('users.id', $user ? $user->id : null);
+    }
+
+    public function getIsFreeAttribute()
+    {
+        return $this->price == 0;
+    }
+
+    public function getHasAccessAttribute()
+    {
+        if ($this->isFree || count($this->accessed) > 0) {
+            return true;
+        }
+        return false;
     }
 }

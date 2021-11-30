@@ -17,4 +17,9 @@ class Bundle extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function getPriceAttribute()
+    {
+        return round($this->user->price * $this->months * (1 - $this->discount / 100));
+    }
 }

@@ -21,6 +21,8 @@ Route::prefix('auth')->group(function () {
     Route::get('refresh', 'AuthController@refresh');
 });
 
+Route::get('/test', 'PaymentController@test');
+
 // dummy function
 // Route::post('log', 'UserController@dolog');
 
@@ -70,4 +72,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('price/bundle', 'PaymentController@bundleStore');
     Route::put('price/bundle/{bundle}', 'PaymentController@bundleUpdate');
     Route::delete('price/bundle/{bundle}', 'PaymentController@bundleDestroy');
+
+    Route::post('payment/{gateway}', 'PaymentController@paymentStore');
+    Route::post('process/{gateway}', 'PaymentController@paymentProcess');
 });

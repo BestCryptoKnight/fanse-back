@@ -32,7 +32,7 @@ class Comment extends Model
     public function liked()
     {
         $user = auth()->user();
-        return $user ? $this->likes()->where('users.id', $user->id) : [];
+        return $this->likes()->where('users.id', $user ? $user->id : null);
     }
 
     public function user()

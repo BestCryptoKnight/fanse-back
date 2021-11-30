@@ -9,7 +9,7 @@ class Post extends Model
 {
     use SoftDeletes;
 
-    protected $with = ['media', 'poll', 'user', 'liked'];
+    protected $with = ['media', 'poll', 'user', 'liked', 'accessed'];
 
     protected $fillable = [
         'message', 'expires', 'schedule', 'price'
@@ -20,7 +20,8 @@ class Post extends Model
     ];
 
     protected $visible = [
-        'id', 'message', 'expires', 'price', 'poll', 'media', 'created_at', 'user', 'likes_count', 'comments_count', 'is_liked', 'is_bookmarked', 'has_voted'
+        'id', 'message', 'expires', 'price', 'poll', 'media', 'created_at', 'user',
+        'likes_count', 'comments_count', 'is_liked', 'is_bookmarked', 'has_voted', 'has_access'
     ];
 
     protected $withCount = [
@@ -52,18 +53,29 @@ class Post extends Model
     public function liked()
     {
         $user = auth()->user();
-        return $user ? $this->likes()->where('users.id', $user->id) : [];
+        return $this->likes()->where('users.id', $user ? $user->id : null);
     }
 
     public function bookmarked()
     {
         $user = auth()->user();
-        return $user ? $this->belongsToMany(User::class, 'bookmarks')->where('users.id', $user->id) : [];
+        return $this->belongsToMany(User::class, 'bookmarks')->where('users.id', $user ? $user->id : null);
     }
 
     public function comments()
     {
         return $this->hasMany(Comment::class);
+    }
+
+    public function access()
+    {
+        return $this->belongsToMany(User::class, 'access_post');
+    }
+
+    public function accessed()
+    {
+        $user = auth()->user();
+        return $this->belongsToMany(User::class, 'access_post')->where('users.id', $user ? $user->id : null);
     }
 
     public function getIsLikedAttribute()
@@ -82,6 +94,25 @@ class Post extends Model
             if ($p->hasVoted) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    public function getIsFreeAttribute()
+    {
+        return $this->price == 0;
+    }
+
+    public function getHasAccessAttribute()
+    {
+        if ($this->user->isFree) {
+            if ($this->isFree) {
+                return true;
+            } else if (count($this->accessed) > 0) {
+                return true;
+            }
+        } else if ($this->user->isSubscribed) {
+            return true;
         }
         return false;
     }

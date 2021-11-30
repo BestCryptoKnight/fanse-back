@@ -38,15 +38,22 @@ return [
         ]
     ],
 
-    'pricing' => [
-        'allow_paid_posts_for_paid_accounts' => true,
-        'caps' => [
-            'subscription' => 50,
-            'tip' => 100,
-            'post' => 100,
-            'message' => 100,
-            'discount' => 50,
-        ]
+    'payment' => [
+        'pricing' => [
+            'allow_paid_posts_for_paid_accounts' => true,
+            'caps' => [
+                'subscription' => 50,
+                'tip' => 100,
+                'post' => 100,
+                'message' => 100,
+                'discount' => 50,
+            ]
+        ],
+        'currency' => [
+            'symbol' => '$',
+            'code' => 'USD',
+            'format' => '%1$s%2$d',
+        ],
     ],
 
     'profile' => [
