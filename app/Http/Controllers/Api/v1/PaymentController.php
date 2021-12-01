@@ -11,6 +11,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Payment as PaymentGateway;
 
 class PaymentController extends Controller
@@ -77,12 +78,18 @@ class PaymentController extends Controller
         return response()->json($user);
     }
 
-    public function paymentStore(string $gateway, Request $request)
+    public function paymentStore(Request $request)
     {
+        $drivers = PaymentGateway::getEnabledDrivers();
+        $gateways = [];
+        foreach ($drivers as $d) {
+            $gateways[] = $d->getId();
+        }
+
         $this->validate($request, [
             'gateway' => [
                 'required',
-                Rule::in(),
+                Rule::in($gateways),
             ],
             'type' => [
                 'required',
@@ -90,9 +97,9 @@ class PaymentController extends Controller
                     Payment::TYPE_SUBSCRIPTION_NEW, Payment::TYPE_POST, Payment::TYPE_MESSAGE
                 ]),
             ],
-            'post_id' => 'required_if:type,' . Payment::TYPE_POST . '|exists:posts',
-            'message_id' => 'required_if:type,' . Payment::TYPE_MESSAGE . '|exists:messages',
-            'sub_id' => 'required_if:type,' . Payment::TYPE_SUBSCRIPTION_NEW . '|exists:users',
+            'post_id' => 'required_if:type,' . Payment::TYPE_POST . '|exists:posts,id',
+            'message_id' => 'required_if:type,' . Payment::TYPE_MESSAGE . '|exists:messages,id',
+            'sub_id' => 'required_if:type,' . Payment::TYPE_SUBSCRIPTION_NEW . '|exists:users,id',
             'bundle_id' => 'nullable|exists:bundles',
         ]);
 
@@ -122,24 +129,25 @@ class PaymentController extends Controller
                 break;
         }
 
+        $gateway = PaymentGateway::driver($request['gateway']);
+
         $payment = $user->payments()->create([
             'type' => $request['type'],
             'info' => $info,
-            'amount' => $amount,
-            'gateway' => $gateway
+            'amount' => $amount * 100,
+            'currency' => config('misc.payment.currency.code'),
+            'gateway' => $gateway->getId()
         ]);
 
-
-
-        return response()->json($adapter->link($payment));
+        return response()->json($gateway->pay($payment));
     }
 
-    public function paymentProcess(string $gateway)
+    public function paymentProcess(string $gateway, Request $request)
     {
-        $adapter = Factory::get($gateway, $request->all());
-        if ($adapter->validate()) {
-            // find payment
-            $payment = $adapter->payment();
+        $gateway = PaymentGateway::driver($gateway);
+        $payment = $gateway->validate($request);
+        $response = ['status' => true];
+        if ($payment) {
             switch ($payment->type) {
                 case Payment::TYPE_SUBSCRIPTION_NEW:
                     $sub = User::findOrFail($payment->info['sub_id']);
@@ -159,6 +167,7 @@ class PaymentController extends Controller
                         'expires' => $expires,
                         'info' => $info
                     ]);
+                    $response['user'] = $sub;
                     break;
                 case Payment::TYPE_SUBSCRIPTION_RENEW:
 
@@ -166,15 +175,24 @@ class PaymentController extends Controller
                 case Payment::TYPE_POST:
                     $post = Post::findOrFail($payment->info['post_id']);
                     $post->access()->attach($payment->user->id);
+                    $response['post'] = $post;
                     break;
                 case Payment::TYPE_MESSAGE:
                     $message = Message::findOrFail($payment->info['message_id']);
                     $message->access()->attach($payment->user->id);
+                    $response['message'] = $message;
                     break;
             }
             $payment->status = Payment::STATUS_COMPLETE;
             $payment->save();
+            return response()->json($response);
+        } else {
+            return response()->json([
+                'message' => '',
+                'errors' => [
+                    '_' => [__('errors.order-can-not-be-processed')]
+                ]
+            ], 422);
         }
-        return response()->json(['status' => true]);
     }
 }

@@ -7,4 +7,5 @@ return [
     'wrong-old-password' => 'Current password is wrong.',
     'wrong-password' => 'Password is wrong.',
     'list-title-taken' => 'List already exists.',
+    'order-can-not-be-processed' => 'Order can not be processed.',
 ];

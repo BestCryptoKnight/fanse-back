@@ -72,7 +72,7 @@ class PostController extends Controller
         $price = $request->input('price');
         if ($price) {
             // TODO: actually check if this account is free
-            if (!config('misc.pricing.allow_paid_posts_for_paid_accounts') && true) {
+            if (!config('misc.payment.pricing.allow_paid_posts_for_paid_accounts') && !$user->isFree) {
                 return response()->json([
                     'message' => '',
                     'errors' => [

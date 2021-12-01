@@ -2,7 +2,8 @@
 
 namespace App\Providers\Payment\Drivers;
 
-use App\Providers\Payment\Contracts\Payment as PaymentModel;
+use App\Models\Payment as PaymentModel;
+use Illuminate\Http\Request;
 use PayPal\Rest\ApiContext;
 use PayPal\Auth\OAuthTokenCredential;
 use PayPal\Api\Agreement;
@@ -50,21 +51,21 @@ class PaypalProvider extends AbstractProvider
         return $this->api;
     }
 
-    public function pay(PaymentModel $payment)
+    public function pay(PaymentModel $paymentModel)
     {
         $payer = new Payer();
         $payer->setPaymentMethod('paypal');
 
         $amount = new Amount();
-        $amount->setTotal($payment->amount / 100);
-        $amount->setCurrency($this->config['misc']['payment']['currency']['code']);
+        $amount->setTotal($paymentModel->amount / 100);
+        $amount->setCurrency($paymentModel->currency);
 
         $transaction = new Transaction();
         $transaction->setAmount($amount);
-        $transaction->setInvoiceNumber($payment->hash);
+        $transaction->setInvoiceNumber($paymentModel->hash);
 
         $redirectUrls = new RedirectUrls();
-        $redirectUrls->setReturnUrl($this->config['app']['app_url'] . '/payment/success/' . $payment->hash)
+        $redirectUrls->setReturnUrl($this->config['app']['app_url'] . '/payment/success/paypal')
             ->setCancelUrl($this->config['app']['app_url'] . '/payment/failure');
 
         $payment = new Payment();
@@ -75,9 +76,33 @@ class PaypalProvider extends AbstractProvider
 
         try {
             $payment->create($this->getApi());
-            return $payment->getApprovalLink();
+            return ['redirect' => $payment->getApprovalLink()];
         } catch (\PayPal\Exception\PayPalConnectionException $ex) {
             Log::error($ex->getData());
         }
+    }
+
+    public function validate(Request $request)
+    {
+        if (isset($request['paymentId']) && isset($request['PayerID'])) {
+            try {
+                $payment = Payment::get($request['paymentId'], $this->getApi());
+                $execution = new PaymentExecution();
+                $execution->setPayerId($request->PayerID);
+                $payment = $payment->execute($execution, $this->getApi());
+                if ($payment->getState() == 'approved') {
+                    $paymentModel = PaymentModel::where('hash', $payment->transactions[0]->getInvoiceNumber())->first();
+                    if ($paymentModel) {
+                        $paymentModel->status = PaymentModel::STATUS_COMPLETE;
+                        $paymentModel->token = $payment->getId();
+                        $paymentModel->save();
+                        return $paymentModel;
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error($e->getMessage());
+            }
+        }
+        return false;
     }
 }

@@ -2,6 +2,9 @@
 
 namespace App\Providers\Payment\Drivers;
 
+use App\Models\Payment as PaymentModel;
+use Illuminate\Http\Request;
+
 abstract class AbstractProvider
 {
     protected $config = [];
@@ -18,4 +21,6 @@ abstract class AbstractProvider
 
     abstract function getName();
     abstract function getId();
+    abstract function pay(PaymentModel $payment);
+    abstract function validate(Request $request);
 }

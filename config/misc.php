@@ -40,7 +40,7 @@ return [
 
     'payment' => [
         'pricing' => [
-            'allow_paid_posts_for_paid_accounts' => true,
+            'allow_paid_posts_for_paid_accounts' => false,
             'caps' => [
                 'subscription' => 50,
                 'tip' => 100,
