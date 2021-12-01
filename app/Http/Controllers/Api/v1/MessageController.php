@@ -52,6 +52,8 @@ class MessageController extends Controller
             'price' => 'nullable|integer'
         ]);
 
+        $price = $request->input('price') * 100;
+
         $messageFrom = $current->messages()->create([
             'message' => $request['message'],
             'party_id' => $user->id,

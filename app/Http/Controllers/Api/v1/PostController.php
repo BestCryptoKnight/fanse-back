@@ -80,6 +80,7 @@ class PostController extends Controller
                     ]
                 ], 422);
             }
+            $price = $price * 100;
         }
 
         $post = $user->posts()->create([
@@ -177,6 +178,7 @@ class PostController extends Controller
                     ]
                 ], 422);
             }
+            $price = $price * 100;
         }
 
         $post->fill([

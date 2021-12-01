@@ -21,7 +21,7 @@ class Payment extends Model
     const STATUS_REFUNDED = 10;
 
     protected $fillable = [
-        'type', 'token', 'gateway', 'amount', 'currency', 'info', 'status'
+        'type', 'token', 'gateway', 'amount', 'currency', 'info', 'status', 'user_id', 'hash', 'status'
     ];
 
     protected $visible = [

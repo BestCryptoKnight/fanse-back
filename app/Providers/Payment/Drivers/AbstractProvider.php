@@ -2,7 +2,9 @@
 
 namespace App\Providers\Payment\Drivers;
 
+use App\Models\Bundle;
 use App\Models\Payment as PaymentModel;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 abstract class AbstractProvider
@@ -21,6 +23,7 @@ abstract class AbstractProvider
 
     abstract function getName();
     abstract function getId();
-    abstract function pay(PaymentModel $payment);
+    abstract function buy(PaymentModel $payment);
+    abstract function subscribe(PaymentModel $paymentModel, User $user, Bundle $bundle = null);
     abstract function validate(Request $request);
 }

@@ -100,16 +100,20 @@ class PaymentController extends Controller
             'post_id' => 'required_if:type,' . Payment::TYPE_POST . '|exists:posts,id',
             'message_id' => 'required_if:type,' . Payment::TYPE_MESSAGE . '|exists:messages,id',
             'sub_id' => 'required_if:type,' . Payment::TYPE_SUBSCRIPTION_NEW . '|exists:users,id',
-            'bundle_id' => 'nullable|exists:bundles',
+            'bundle_id' => 'nullable|exists:bundles,id',
         ]);
 
         $user = auth()->user();
         $amount = 0;
+        $bundle = null;
         $info = [];
         switch ($request['type']) {
             case Payment::TYPE_SUBSCRIPTION_NEW:
                 $info['sub_id'] = $request['sub_id'];
                 $sub = User::findOrFail($info['sub_id']);
+                /*if ($user->id == $sub->id) {
+                    abort(403);
+                }*/
                 $amount = $sub->price;
                 if ($request->input('bundle_id')) {
                     $info['bundle_id'] = $request['bundle_id'];
@@ -120,11 +124,17 @@ class PaymentController extends Controller
             case Payment::TYPE_POST:
                 $info['post_id'] = $request['post_id'];
                 $post = Post::findOrFail($info['post_id']);
+                if ($user->id == $post->user_id) {
+                    abort(403);
+                }
                 $amount = $post->price;
                 break;
             case Payment::TYPE_MESSAGE:
                 $info['message_id'] = $request['message_id'];
-                $message = Post::findOrFail($info['message_id']);
+                $message = Message::findOrFail($info['message_id']);
+                if ($user->id == $message->party_id) {
+                    abort(403);
+                }
                 $amount = $message->price;
                 break;
         }
@@ -134,12 +144,16 @@ class PaymentController extends Controller
         $payment = $user->payments()->create([
             'type' => $request['type'],
             'info' => $info,
-            'amount' => $amount * 100,
+            'amount' => $amount,
             'currency' => config('misc.payment.currency.code'),
             'gateway' => $gateway->getId()
         ]);
 
-        return response()->json($gateway->pay($payment));
+        $response = $request['type'] == Payment::TYPE_SUBSCRIPTION_NEW
+            ? $gateway->subscribe($payment, $sub, $bundle)
+            : $gateway->buy($payment);
+
+        return response()->json($response);
     }
 
     public function paymentProcess(string $gateway, Request $request)
@@ -160,17 +174,24 @@ class PaymentController extends Controller
                             'bundle_id' => $bundle->id
                         ];
                     }
-                    $subscription = $payment->user->subscriptions()->create([
-                        'sub_id' => $payment->info['sub_id'],
-                        'token' => $payment->token,
-                        'gateway' => $payment->gateway,
-                        'expires' => $expires,
-                        'info' => $info
-                    ]);
+                    $subscription = $payment->user->subscriptions()->where('token', $payment->token)->first();
+                    if (!$subscription) {
+                        $subscription = $payment->user->subscriptions()->create([
+                            'sub_id' => $payment->info['sub_id'],
+                            'token' => $payment->token,
+                            'gateway' => $payment->gateway,
+                            'expires' => $expires,
+                            'info' => $info
+                        ]);
+                    }
                     $response['user'] = $sub;
                     break;
                 case Payment::TYPE_SUBSCRIPTION_RENEW:
-
+                    if (isset($payment->info['expire'])) {
+                        $subscription = $payment->user->subscriptions()->where('token', $payment->token)->first();
+                        $subscription->expire = new Carbon($payment->info['expire']);
+                        $subscription->save();
+                    }
                     break;
                 case Payment::TYPE_POST:
                     $post = Post::findOrFail($payment->info['post_id']);
