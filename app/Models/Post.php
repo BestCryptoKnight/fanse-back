@@ -28,7 +28,7 @@ class Post extends Model
         'likes', 'comments'
     ];
 
-    protected $appends = ['is_liked', 'is_bookmarked', 'has_voted'];
+    protected $appends = ['is_liked', 'is_bookmarked', 'has_voted', 'has_access'];
 
     public function user()
     {
@@ -105,6 +105,10 @@ class Post extends Model
 
     public function getHasAccessAttribute()
     {
+        if ($this->user->id == auth()->user()->id) {
+            return true;
+        }
+
         if ($this->user->isFree) {
             if ($this->isFree) {
                 return true;
@@ -115,5 +119,15 @@ class Post extends Model
             return true;
         }
         return false;
+    }
+
+    public function toArray()
+    {
+        if (!$this->hasAccess) {
+            foreach ($this->media as $m) {
+                $m->makeHidden(['url', 'screenshot']);
+            }
+        }
+        return parent::toArray();
     }
 }

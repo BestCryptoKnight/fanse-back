@@ -23,6 +23,7 @@ Route::prefix('auth')->group(function () {
 
 Route::get('/test', 'PaymentController@test');
 Route::post('process/{gateway}', 'PaymentController@paymentProcess');
+Route::get('payment/gateways', 'PaymentController@paymentGateways');
 
 // dummy function
 // Route::post('log', 'UserController@dolog');
@@ -75,4 +76,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('price/bundle/{bundle}', 'PaymentController@bundleDestroy');
 
     Route::post('payment', 'PaymentController@paymentStore');
+    Route::post('subscribe/{user}', 'PaymentController@subscribe');
 });

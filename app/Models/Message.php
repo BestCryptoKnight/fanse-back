@@ -53,9 +53,21 @@ class Message extends Model
 
     public function getHasAccessAttribute()
     {
-        if ($this->isFree || count($this->accessed) > 0) {
+        if ($this->user->id == auth()->user()->id) {
+            return true;
+        } else if ($this->isFree || count($this->accessed) > 0) {
             return true;
         }
         return false;
+    }
+
+    public function toArray()
+    {
+        if (!$this->hasAccess) {
+            foreach ($this->media as $m) {
+                $m->makeHidden(['url', 'screenshot']);
+            }
+        }
+        return parent::toArray();
     }
 }

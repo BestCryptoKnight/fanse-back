@@ -112,8 +112,8 @@ class PaypalProvider extends AbstractProvider
 
         $paymentDefinition->setName('Regular Payments')
             ->setType('REGULAR')
-            ->setFrequency('Day')
-            ->setFrequencyInterval(1/*$bundle ? $bundle->months : 1*/)
+            ->setFrequency('Month')
+            ->setFrequencyInterval($bundle ? $bundle->months : 1)
             ->setAmount(new Currency(array('value' => ($paymentModel->amount / 100), 'currency' => $paymentModel->currency)));
 
         $merchantPreferences = new MerchantPreferences();

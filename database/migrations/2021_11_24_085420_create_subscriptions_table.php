@@ -18,8 +18,8 @@ class CreateSubscriptionsTable extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('sub_id')->constrained('users')->onDelete('cascade');
             $table->string('hash');
-            $table->string('token');
-            $table->string('gateway');
+            $table->string('token')->nullable();
+            $table->string('gateway')->nullable();
             $table->dateTime('expires')->nullable();
             $table->json('info')->nullable();
             $table->timestamps();

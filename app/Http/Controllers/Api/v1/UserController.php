@@ -16,7 +16,7 @@ class UserController extends Controller
      */
     public function show(string $username)
     {
-        $user = User::where('username', $username)->firstOrFail();
+        $user = User::where('username', $username)->with('bundles')->firstOrFail();
         $user->makeVisible(['bio', 'location', 'website']);
         return response()->json($user);
     }

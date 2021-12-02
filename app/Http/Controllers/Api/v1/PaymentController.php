@@ -16,14 +16,14 @@ use Payment as PaymentGateway;
 
 class PaymentController extends Controller
 {
-    public function test()
+    public function paymentGateways()
     {
         $drivers = PaymentGateway::getEnabledDrivers();
         $dd = [];
         foreach ($drivers as $d) {
-            $dd[$d->getId()] = $d->getName();
+            $dd[] = ['id' => $d->getId(), 'name' => $d->getName()];
         }
-        return print_r($dd, true);
+        return response()->json(['gateways' => $dd]);
     }
 
     public function price(Request $request)
@@ -78,6 +78,25 @@ class PaymentController extends Controller
         return response()->json($user);
     }
 
+    public function subscribe(User $user)
+    {
+        $current = auth()->user();
+        if ($current->id == $user->id) {
+            abort(403);
+        }
+
+        $existing = $user->subscriptions()->where('sub_id', $user->id)->first();
+        if ($existing) {
+            $existing->delete();
+        } else {
+            $subscription = $user->subscriptions()->create([
+                'sub_id' => $user->id
+            ]);
+        }
+
+        return response()->json($user);
+    }
+
     public function paymentStore(Request $request)
     {
         $drivers = PaymentGateway::getEnabledDrivers();
@@ -111,9 +130,9 @@ class PaymentController extends Controller
             case Payment::TYPE_SUBSCRIPTION_NEW:
                 $info['sub_id'] = $request['sub_id'];
                 $sub = User::findOrFail($info['sub_id']);
-                /*if ($user->id == $sub->id) {
+                if ($user->id == $sub->id) {
                     abort(403);
-                }*/
+                }
                 $amount = $sub->price;
                 if ($request->input('bundle_id')) {
                     $info['bundle_id'] = $request['bundle_id'];
