@@ -199,6 +199,7 @@ class PaymentController extends Controller
                             'sub_id' => $payment->info['sub_id'],
                             'token' => $payment->token,
                             'gateway' => $payment->gateway,
+                            'amount' => $payment->amount,
                             'expires' => $expires,
                             'info' => $info
                         ]);

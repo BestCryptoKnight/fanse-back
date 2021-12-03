@@ -229,6 +229,10 @@ class PostController extends Controller
 
     public function like(Post $post, Request $request)
     {
+        if (!$post->hasAccess) {
+            abort(403);
+        }
+
         $user = auth()->user();
         $res = $post->likes()->toggle([$user->id]);
 
@@ -249,6 +253,10 @@ class PostController extends Controller
 
     public function vote(Post $post, Poll $poll)
     {
+        if (!$post->hasAccess) {
+            abort(403);
+        }
+
         $poll->votes()->attach(auth()->user()->id);
         $post->refresh();
         return response()->json($post);

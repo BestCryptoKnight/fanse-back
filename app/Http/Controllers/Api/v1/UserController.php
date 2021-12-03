@@ -20,4 +20,12 @@ class UserController extends Controller
         $user->makeVisible(['bio', 'location', 'website']);
         return response()->json($user);
     }
+
+    public function subscriptions()
+    {
+        $subs = auth()->user()->subscriptions()->with('sub')->paginate(config('misc.page.size'));
+        return response()->json([
+            'subs' => $subs
+        ]);
+    }
 }

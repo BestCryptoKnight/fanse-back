@@ -17,7 +17,11 @@ class CommentController extends Controller
      */
     public function index(Post $post)
     {
-        $comments = $post->comments()->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+        if (!$post->hasAccess) {
+            abort(403);
+        }
+
+        $comments = $post->comments()->orderBy('created_at', 'asc')->paginate(config('misc.page.size'));
         return response()->json($comments);
     }
 
@@ -29,7 +33,10 @@ class CommentController extends Controller
      */
     public function store(Post $post, Request $request)
     {
-        // TODO: allow only comment on a post they have access to
+        if (!$post->hasAccess) {
+            abort(403);
+        }
+
         $this->validate($request, [
             'message' => 'required|string|max:191',
         ]);
@@ -68,6 +75,10 @@ class CommentController extends Controller
 
     public function like(Comment $comment, Request $request)
     {
+        if (!$comment->post->hasAccess) {
+            abort(403);
+        }
+
         $user = auth()->user();
         $res = $comment->likes()->toggle([$user->id]);
 

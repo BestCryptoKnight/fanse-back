@@ -64,6 +64,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('lists/{id}', 'ListController@indexList');
 
     Route::get('users/{username}', 'UserController@show');
+    Route::get('subscriptions', 'UserController@subscriptions');
 
     Route::post('messages/{user}', 'MessageController@store');
     Route::get('messages/{user}', 'MessageController@indexChat');
