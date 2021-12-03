@@ -105,7 +105,8 @@ class Post extends Model
 
     public function getHasAccessAttribute()
     {
-        if ($this->user->id == auth()->user()->id) {
+        $user = auth()->user();
+        if ($user && $this->user->id == auth()->user()->id) {
             return true;
         }
 

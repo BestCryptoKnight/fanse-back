@@ -10,10 +10,12 @@ class Message extends Model
     protected $fillable = ['message', 'price'];
 
     protected $visible = [
-        'id', 'message', 'media', 'created_at', 'user', 'party', 'read'
+        'id', 'message', 'media', 'created_at', 'user', 'party', 'read', 'has_access', 'price'
     ];
 
     protected $with = ['accessed'];
+
+    protected $appends = ['has_access'];
 
     public function user()
     {
@@ -43,7 +45,8 @@ class Message extends Model
 
     public function getHasAccessAttribute()
     {
-        if ($this->user->id == auth()->user()->id) {
+        $user = auth()->user();
+        if ($user && $this->user->id == $user->id) {
             return true;
         } else if ($this->isFree || count($this->accessed) > 0) {
             return true;

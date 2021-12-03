@@ -71,7 +71,7 @@ class MessageController extends Controller
 
         $message = $current->messages()->create([
             'message' => $request['message'],
-            'price' => $request->input('price')
+            'price' => $price
         ]);
 
         $media = $request->input('media');

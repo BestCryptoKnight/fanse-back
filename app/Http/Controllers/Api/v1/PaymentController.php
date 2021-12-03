@@ -218,7 +218,7 @@ class PaymentController extends Controller
                     $response['post'] = $post;
                     break;
                 case Payment::TYPE_MESSAGE:
-                    $message = Message::findOrFail($payment->info['message_id']);
+                    $message = Message::with('user')->findOrFail($payment->info['message_id']);
                     $message->access()->attach($payment->user->id);
                     $response['message'] = $message;
                     break;
