@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Log;
+use DB;
 
 class MessageController extends Controller
 {
@@ -19,9 +20,13 @@ class MessageController extends Controller
     {
         // find all last messages
         $user = auth()->user();
-        $chats = $user->messages()->with('party')->whereIn('id', function ($q) use ($user) {
-            $q->selectRaw('max(id)')->from('messages')->where('user_id', $user->id)->groupBy('party_id')->orderBy('created_at', 'desc');
-        })->get();
+        $chats = $user->mailbox()->whereIn('messages.id', function ($q) use ($user) {
+            $q->selectRaw('max(message_id)')->from('message_user')->where('user_id', $user->id)->groupBy('party_id');
+        })->orderBy('created_at', 'desc')->get();
+
+        $chats->map(function ($item) {
+            $item->append(['party', 'read']);
+        });
 
         return response()->json($chats);
     }
@@ -29,7 +34,17 @@ class MessageController extends Controller
     public function indexChat(User $user)
     {
         $current = auth()->user();
-        $messages = $current->messages()->with(['party', 'media'])->where('party_id', $user->id)->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+        $messages = $current->mailbox()->with('media')->wherePivot('party_id', $user->id)->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+        $messages->map(function ($item) {
+            $item->append('read');
+        });
+
+        DB::table('message_user')->whereIn('message_id', $messages->pluck('message_id'))->where(function ($q) use ($current) {
+            $q->where('user_id', $current->id)->orWhere('party_id', $current->id);
+        })->update([
+            'read' => 1
+        ]);
+
         return response()->json([
             'party' => $user,
             'messages' => $messages
@@ -54,17 +69,8 @@ class MessageController extends Controller
 
         $price = $request->input('price') * 100;
 
-        $messageFrom = $current->messages()->create([
+        $message = $current->messages()->create([
             'message' => $request['message'],
-            'party_id' => $user->id,
-            'direction' => false,
-            'price' => $request->input('price')
-        ]);
-
-        $messageTo = $user->messages()->create([
-            'message' => $request['message'],
-            'party_id' => $current->id,
-            'direction' => true,
             'price' => $request->input('price')
         ]);
 
@@ -81,12 +87,15 @@ class MessageController extends Controller
                     $model->save();
                 }
             }
-            $messageFrom->media()->sync($media->keys());
-            $messageTo->media()->sync($media->keys());
+            $message->media()->sync($media->keys());
         }
 
-        $messageFrom->refresh()->load(['media', 'party']);
-        return response()->json($messageFrom);
+        // mailbox
+        $current->mailbox()->attach($message, ['party_id' => $user->id]);
+        $user->mailbox()->attach($message, ['party_id' => $current->id]);
+
+        $message->refresh()->load('media');
+        return response()->json($message);
     }
 
     /**
@@ -98,7 +107,7 @@ class MessageController extends Controller
     public function destroy(User $user)
     {
         $current = auth()->user();
-        $current->messages()->where('party_id', $user->id)->delete();
+        DB::table('message_user')->where('party_id', $user->id)->delete();
         return response()->json(['status' => true]);
     }
 }

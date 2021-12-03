@@ -102,6 +102,11 @@ class User extends Authenticatable
         return $this->hasMany(Message::class);
     }
 
+    public function mailbox()
+    {
+        return $this->belongsToMany(Message::class)->withPivot(['party_id', 'read'])->using(MessagePivot::class);
+    }
+
     public function bundles()
     {
         return $this->hasMany(Bundle::class);

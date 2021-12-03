@@ -7,15 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Message extends Model
 {
-    protected $fillable = ['message', 'party_id', 'direction', 'price'];
+    protected $fillable = ['message', 'price'];
 
     protected $visible = [
-        'id', 'message', 'media', 'created_at', 'user', 'party', 'read', 'direction'
-    ];
-
-    protected $casts = [
-        'direction' => 'boolean',
-        'read' => 'boolean',
+        'id', 'message', 'media', 'created_at', 'user', 'party', 'read'
     ];
 
     protected $with = ['accessed'];
@@ -23,11 +18,6 @@ class Message extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function party()
-    {
-        return $this->belongsTo(User::class, 'party_id');
     }
 
     public function media()
@@ -57,6 +47,22 @@ class Message extends Model
             return true;
         } else if ($this->isFree || count($this->accessed) > 0) {
             return true;
+        }
+        return false;
+    }
+
+    public function getPartyAttribute()
+    {
+        if ($this->pivot) {
+            return User::find($this->pivot->party_id);
+        }
+        return null;
+    }
+
+    public function getReadAttribute()
+    {
+        if ($this->pivot) {
+            return $this->pivot->read;
         }
         return false;
     }
