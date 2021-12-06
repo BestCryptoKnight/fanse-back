@@ -28,4 +28,39 @@ class UserController extends Controller
             'subs' => $subs
         ]);
     }
+
+    public function subscribe(User $user)
+    {
+        $current = auth()->user();
+        if ($current->id == $user->id) {
+            abort(403);
+        }
+
+        $subscription = $current->subscriptions()->where('sub_id', $user->id)->first();
+        if ($subscription) {
+            $subscription->active = true;
+            $subscription->save();
+        } else {
+            $subscription = $current->subscriptions()->create([
+                'sub_id' => $user->id
+            ]);
+        }
+
+        $subscription->refresh();
+        $subscription->load('sub');
+
+        return response()->json($subscription);
+    }
+
+    public function subscriptionDestroy(User $user)
+    {
+        $sub = auth()->user()->subscriptions()->with('sub')->where('id', $user->id)->firstOrFail();
+        if ($sub->expires) {
+            $sub->active = false;
+            $sub->save();
+            return response()->json(['status' => true, 'subscription' => $sub]);
+        }
+        $sub->delete();
+        return response()->json(['status' => false]);
+    }
 }

@@ -22,6 +22,7 @@ class CreateSubscriptionsTable extends Migration
             $table->bigInteger('amount')->unsigned()->default(0);
             $table->string('gateway')->nullable();
             $table->dateTime('expires')->nullable();
+            $table->boolean('active')->default(true);
             $table->json('info')->nullable();
             $table->timestamps();
             $table->softDeletes();

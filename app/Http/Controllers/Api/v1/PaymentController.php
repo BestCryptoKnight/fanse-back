@@ -78,25 +78,6 @@ class PaymentController extends Controller
         return response()->json($user);
     }
 
-    public function subscribe(User $user)
-    {
-        $current = auth()->user();
-        if ($current->id == $user->id) {
-            abort(403);
-        }
-
-        $existing = $user->subscriptions()->where('sub_id', $user->id)->first();
-        if ($existing) {
-            $existing->delete();
-        } else {
-            $subscription = $user->subscriptions()->create([
-                'sub_id' => $user->id
-            ]);
-        }
-
-        return response()->json($user);
-    }
-
     public function paymentStore(Request $request)
     {
         $drivers = PaymentGateway::getEnabledDrivers();

@@ -11,7 +11,7 @@ class Subscription extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'sub_id', 'token', 'gateway', 'expires', 'info', 'amount'
+        'sub_id', 'token', 'gateway', 'expires', 'info', 'amount', 'active'
     ];
 
     protected $dates = [
@@ -19,11 +19,12 @@ class Subscription extends Model
     ];
 
     protected $casts = [
-        'info' => 'array'
+        'info' => 'array',
+        'active' => 'bool'
     ];
 
     protected $visible = [
-        'sub', 'expires', 'info', 'amount'
+        'id', 'sub', 'expires', 'info', 'amount', 'active'
     ];
 
     protected static function boot()

@@ -65,6 +65,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('users/{username}', 'UserController@show');
     Route::get('subscriptions', 'UserController@subscriptions');
+    Route::delete('subscriptions/{user}', 'UserController@subscriptionDestroy');
+    Route::post('subscribe/{user}', 'UserController@subscribe');
 
     Route::post('messages/{user}', 'MessageController@store');
     Route::get('messages/{user}', 'MessageController@indexChat');
@@ -77,5 +79,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('price/bundle/{bundle}', 'PaymentController@bundleDestroy');
 
     Route::post('payment', 'PaymentController@paymentStore');
-    Route::post('subscribe/{user}', 'PaymentController@subscribe');
 });
