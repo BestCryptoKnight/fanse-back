@@ -18,7 +18,7 @@ class CreateNotificationsTable extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->tinyInteger('type');
             $table->json('info');
-            $table->tinyInteger('viewed')->default(0);
+            $table->boolean('viewed')->default(false);
             $table->timestamps();
         });
     }

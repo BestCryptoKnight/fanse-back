@@ -54,7 +54,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('profile/email', 'ProfileController@email');
     Route::post('profile/password', 'ProfileController@password');
 
-    Route::apiResource('notifications', 'NotificationController')->only(['index']);
     Route::post('bookmarks/{post}', 'BookmarkController@add');
     Route::get('bookmarks', 'BookmarkController@index');
     Route::post('lists', 'ListController@store');
@@ -79,4 +78,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('price/bundle/{bundle}', 'PaymentController@bundleDestroy');
 
     Route::post('payment', 'PaymentController@paymentStore');
+    Route::get('notifications', 'NotificationController@index');
 });

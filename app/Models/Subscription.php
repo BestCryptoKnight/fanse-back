@@ -39,6 +39,14 @@ class Subscription extends Model
                 }
             }
         });
+        static::created(function ($model) {
+            $model->sub->notifications()->firstOrCreate([
+                'type' => Notification::TYPE_SUBSCRIBE,
+                'info' => [
+                    'user_id' => $model->user_id
+                ]
+            ]);
+        });
     }
 
     public function user()

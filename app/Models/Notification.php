@@ -18,16 +18,19 @@ class Notification extends Model
     ];
 
     protected $casts = [
-        'info' => 'array'
+        'info' => 'array',
+        'viewed' => 'bool'
     ];
 
     protected $visible = [
-        'type', 'user', 'viewed', 'id', 'items'
+        'type', 'user', 'viewed', 'id', 'items', 'created_at'
     ];
 
     protected $appends = [
         'items'
     ];
+
+    protected $with = ['user'];
 
     public function user()
     {

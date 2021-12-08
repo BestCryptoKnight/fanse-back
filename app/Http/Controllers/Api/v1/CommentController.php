@@ -49,6 +49,7 @@ class CommentController extends Controller
         $post->user->notifications()->create([
             'type' => Notification::TYPE_COMMENT,
             'info' => [
+                'comment_id' => $comment->id,
                 'user_id' => $comment->user_id,
                 'post_id' => $post->id
             ]
@@ -88,7 +89,8 @@ class CommentController extends Controller
                 'type' => Notification::TYPE_COMMENT_LIKE,
                 'info' => [
                     'user_id' => $user->id,
-                    'comment_id' => $comment->id
+                    'comment_id' => $comment->id,
+                    'post_id' => $comment->post_id,
                 ]
             ]);
         }

@@ -119,13 +119,13 @@ class User extends Authenticatable
 
     public function subscribers()
     {
-        return $this->belongsToMany(User::class, 'subscriptions', 'sub_id', 'user_id');
+        return $this->hasMany(Subscription::class, 'sub_id');
     }
 
     public function subscribed()
     {
         $user = auth()->user();
-        return $this->subscribers()->where('subscriptions.user_id', $user ? $user->id : null);
+        return $this->subscribers()->where('user_id', $user ? $user->id : null);
     }
 
     public function payments()

@@ -54,7 +54,9 @@ class UserController extends Controller
 
     public function subscriptionDestroy(User $user)
     {
-        $sub = auth()->user()->subscriptions()->with('sub')->where('id', $user->id)->firstOrFail();
+        $sub = auth()->user()->subscriptions()->with('sub', function ($q) use ($user) {
+            $q->where('id', $user->id);
+        })->firstOrFail();
         if ($sub->expires) {
             $sub->active = false;
             $sub->save();
