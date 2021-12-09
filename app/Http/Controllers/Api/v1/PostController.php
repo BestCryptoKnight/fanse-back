@@ -41,7 +41,7 @@ class PostController extends Controller
     public function store(Request $request)
     {
         $this->validate($request, [
-            'message' => 'required|string|max:191',
+            'message' => 'required|string|max:2000',
             'media' => 'nullable|array|max:' . config('misc.post.media.max'),
             'poll' => 'nullable|array|min:2|max:' . config('misc.post.poll.max'),
             'media.*' => 'array',
@@ -138,7 +138,7 @@ class PostController extends Controller
     {
         // TODO: allow only owner
         $this->validate($request, [
-            'message' => 'required|string|max:191',
+            'message' => 'required|string|max:2000',
             'media' => 'nullable|array',
             'media.*' => 'array',
             'media.*.id' => 'integer',

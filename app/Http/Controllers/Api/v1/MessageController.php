@@ -35,15 +35,21 @@ class MessageController extends Controller
     {
         $current = auth()->user();
         $messages = $current->mailbox()->with('media')->wherePivot('party_id', $user->id)->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
-        $messages->map(function ($item) {
+        $ids = [];
+        $messages->map(function ($item) use ($current, &$ids) {
             $item->append('read');
+            if ($item->user_id != $current->id && !$item->read) {
+                $ids[] = $item->id;
+            }
         });
 
-        DB::table('message_user')->whereIn('message_id', $messages->pluck('message_id'))->where(function ($q) use ($current) {
-            $q->where('user_id', $current->id)->orWhere('party_id', $current->id);
-        })->update([
-            'read' => 1
-        ]);
+        if (count($ids)) {
+            DB::table('message_user')->whereIn('message_id', $ids)->where(function ($q) use ($current) {
+                $q->where('user_id', $current->id)->orWhere('party_id', $current->id);
+            })->update([
+                'read' => 1
+            ]);
+        }
 
         return response()->json([
             'party' => $user,

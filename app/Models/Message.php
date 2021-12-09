@@ -15,7 +15,7 @@ class Message extends Model
 
     protected $with = ['accessed'];
 
-    protected $appends = ['has_access'];
+    protected $appends = ['has_access', 'read'];
 
     public function user()
     {
