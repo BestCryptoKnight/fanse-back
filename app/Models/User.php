@@ -77,6 +77,11 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class);
     }
 
+    public function notificationsNew()
+    {
+        return $this->hasMany(Notification::class)->where('viewed', false);
+    }
+
     public function media()
     {
         return $this->hasMany(Media::class);
@@ -105,6 +110,11 @@ class User extends Authenticatable
     public function mailbox()
     {
         return $this->belongsToMany(Message::class)->withPivot(['party_id', 'read'])->using(MessagePivot::class);
+    }
+
+    public function mailboxNew()
+    {
+        return $this->belongsToMany(Message::class)->withPivot(['party_id', 'read'])->using(MessagePivot::class)->wherePivot('read', false);
     }
 
     public function bundles()

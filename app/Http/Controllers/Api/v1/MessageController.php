@@ -28,7 +28,7 @@ class MessageController extends Controller
             $item->append(['party', 'read']);
         });
 
-        return response()->json($chats);
+        return response()->json(['chats' => $chats]);
     }
 
     public function indexChat(User $user)
