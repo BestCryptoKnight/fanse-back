@@ -8,12 +8,17 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Http\Response
-     */
+    public function suggestions()
+    {
+        $user = auth()->user();
+        $users = User::where('id', '<>', $user->id)->whereDoesntHave('subscribers', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })->take(30)->get();
+        return response()->json([
+            'users' => $users
+        ]);
+    }
+
     public function show(string $username)
     {
         $user = User::where('username', $username)->with('bundles')->firstOrFail();

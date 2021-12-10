@@ -63,6 +63,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('lists/{id}', 'ListController@indexList');
 
     Route::get('users/{username}', 'UserController@show');
+    Route::get('users', 'UserController@suggestions');
     Route::get('subscriptions', 'UserController@subscriptions');
     Route::delete('subscriptions/{user}', 'UserController@subscriptionDestroy');
     Route::post('subscribe/{user}', 'UserController@subscribe');
