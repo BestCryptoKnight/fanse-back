@@ -36,7 +36,10 @@ class User extends Authenticatable
         'bio',
         'location',
         'website',
-        'price'
+        'price',
+        'avatar',
+        'cover',
+        'email_verified_at'
     ];
 
     protected $visible = [

@@ -57,9 +57,13 @@ return [
     ],
 
     'profile' => [
-        'image' => [
+        'avatar' => [
             'maxsize' => '20000',
             'resize' => '1080x1080',
+        ],
+        'cover' => [
+            'maxsize' => '20000',
+            'resize' => '1920x1080',
         ],
     ],
 

@@ -118,21 +118,6 @@ class AuthController extends Controller
         return response()->json(['status' => true]);
     }
 
-    /**
-     * Refresh a token.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     * @deprecated
-     */
-    public function refresh()
-    {
-        try {
-            return response()->json(['token' => auth()->refresh()]);
-        } catch (\Exception $e) {
-            abort(401, 'Unauthenticated.');
-        }
-    }
-
     public function dolog()
     {
     }

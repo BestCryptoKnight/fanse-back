@@ -25,7 +25,7 @@ class ProfileController extends Controller
 
         // new image uploaded
         if ($file = $request->file('image')) {
-            list($w, $h) = explode('x', config('misc.profile.image.resize'));
+            list($w, $h) = explode('x', config('misc.profile.' . $type . '.resize'));
             $path = storage_path('app/tmp') . DIRECTORY_SEPARATOR . $user->id . '-' . $type . '.' . $file->extension();
             $image = Image::make($file)->orientate()->fit($w, $h, function ($constraint) {
                 $constraint->upsize();

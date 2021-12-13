@@ -1,3 +1,7 @@
 *
+!demo/
+!demo/*
+!demo/*/*
+!demo/*/*/*
 !public/
 !.gitignore
