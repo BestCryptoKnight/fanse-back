@@ -222,6 +222,7 @@ class PostController extends Controller
     public function destroy(Post $post)
     {
         if ($post->user_id == auth()->user()->id) {
+            Notification::where('info->post_id', $post->id)->delete();
             $post->delete();
         }
         return response()->json(['status' => true]);
