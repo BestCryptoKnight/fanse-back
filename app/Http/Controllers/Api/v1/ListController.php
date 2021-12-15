@@ -27,18 +27,18 @@ class ListController extends Controller
 
     public function indexUser(User $user)
     {
-        $user = auth()->user();
+        $current = auth()->user();
 
         $original = collect([
-            CustomList::bookmarks($user)
+            CustomList::bookmarks($current)
         ]);
 
-        $lists = $original->concat($user->lists()->with('user')->get());
+        $lists = $original->concat($current->lists()->with('user')->get());
         $lists->map(function ($model) {
             $model->append('listees_count');
         });
 
-        $contains = $user->listees()->where('lists.user_id', $user->id)->first();
+        $contains = $current->listees()->where('lists.listee_id', $user->id)->first();
 
         return response()->json([
             'lists' => $lists,

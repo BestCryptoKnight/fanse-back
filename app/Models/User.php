@@ -117,7 +117,10 @@ class User extends Authenticatable
 
     public function mailboxNew()
     {
-        return $this->belongsToMany(Message::class)->withPivot(['party_id', 'read'])->using(MessagePivot::class)->wherePivot('read', false);
+        return $this->belongsToMany(Message::class)->withPivot(['party_id', 'read'])
+            ->using(MessagePivot::class)
+            ->where('messages.user_id', '<>', $this->id)
+            ->wherePivot('read', false);
     }
 
     public function bundles()
