@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Post extends Model
 {
     use SoftDeletes;
+
+    const TYPE_ACTIVE = 0;
+    const TYPE_SCHEDULED = 1;
+    const TYPE_EXPIRED = 2;
 
     protected $with = ['media', 'poll', 'user', 'liked', 'accessed'];
 
@@ -20,7 +25,7 @@ class Post extends Model
     ];
 
     protected $visible = [
-        'id', 'message', 'expires', 'price', 'poll', 'media', 'created_at', 'user',
+        'id', 'message', 'expires', 'price', 'poll', 'media', 'published_at', 'user',
         'likes_count', 'comments_count', 'is_liked', 'is_bookmarked', 'has_voted', 'has_access'
     ];
 
@@ -28,7 +33,32 @@ class Post extends Model
         'likes', 'comments'
     ];
 
-    protected $appends = ['is_liked', 'is_bookmarked', 'has_voted', 'has_access'];
+    protected $appends = ['is_liked', 'is_bookmarked', 'has_voted', 'has_access', 'published_at'];
+
+    public function scopeActive($query)
+    {
+        $now = Carbon::now('UTC');
+        return $query
+            ->where(function ($q) use ($now) {
+                $q->whereNull('schedule')->orWhere('schedule', '<', $now);
+            })
+            ->where(function ($q) use ($now) {
+                $q->whereNull('expires')
+                    ->orWhereRaw('DATE_ADD(GREATEST(created_at, schedule), INTERVAL expires DAY) > ?', [$now]);
+            });
+    }
+
+    public function scopeExpired($query)
+    {
+        $now = Carbon::now('UTC');
+        return $query->whereNotNull('expires')->whereRaw('DATE_ADD(GREATEST(created_at, schedule), INTERVAL expires DAY) < ?', [$now]);
+    }
+
+    public function scopeScheduled($query)
+    {
+        $now = Carbon::now('UTC');
+        return $query->whereNotNull('schedule')->where('schedule', '>', $now);
+    }
 
     public function user()
     {
@@ -120,6 +150,11 @@ class Post extends Model
             return true;
         }
         return false;
+    }
+
+    public function getPublishedAtAttribute()
+    {
+        return max($this->schedule, $this->created_at);
     }
 
     public function toArray()

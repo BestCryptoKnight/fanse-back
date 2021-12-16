@@ -30,8 +30,6 @@ class DemoSeeder extends Seeder
         $covers = Storage::disk('local')->files('demo/landscape');
         $media = Storage::disk('local')->directories('demo/media');
         shuffle($media);
-        list($aw, $ah) = explode('x', config('misc.profile.avatar.resize'));
-        list($cw, $ch) = explode('x', config('misc.profile.cover.resize'));
 
         // users
         $users = [];
@@ -41,6 +39,7 @@ class DemoSeeder extends Seeder
             $email = $k == 0 ? 'demo@uniprogy.com' : $faker->unique()->safeEmail();
             $password = $k == 0 ? 'password' : $faker->password;
             $price = $k % 2 == 0 ? 0 : 2000;
+            $username = str_replace('.', '_', $faker->username);
             $user = User::create([
                 'email' => $email,
                 'name' => $faker->firstName('female') . ' ' . $faker->lastName,
@@ -58,17 +57,9 @@ class DemoSeeder extends Seeder
             ]);
             // upload avatar and cover
             $avatar = Storage::disk('local')->path($avatars[$k]);
-            $image = Image::make($avatar)->orientate()->fit($aw, $ah, function ($constraint) {
-                $constraint->upsize();
-            });
-            $image->save($avatar);
             Storage::put('profile/avatar/' . $user->id . '.jpg', file_get_contents($avatar));
 
             $cover = Storage::disk('local')->path($covers[$k]);
-            $image = Image::make($cover)->orientate()->fit($cw, $ch, function ($constraint) {
-                $constraint->upsize();
-            });
-            $image->save($cover);
             Storage::put('profile/cover/' . $user->id . '.jpg', file_get_contents($cover));
 
             if ($price) {

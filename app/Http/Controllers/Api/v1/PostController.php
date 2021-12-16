@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Storage;
 use Log;
+use DB;
 
 class PostController extends Controller
 {
@@ -22,13 +23,35 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::query()->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+        $posts = Post::active()->orderByRaw('GREATEST(created_at, schedule) desc')->paginate(config('misc.page.size'));
         return response()->json($posts);
     }
 
-    public function user(User $user)
+    public function user(User $user, Request $request)
     {
-        $posts = $user->posts()->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+        $current = auth()->user();
+        if ($current->id != $user->id) {
+            $type = Post::TYPE_ACTIVE;
+        } else {
+            $type = $request->input('type');
+            if (!in_array($type, [Post::TYPE_ACTIVE, Post::TYPE_EXPIRED, Post::TYPE_SCHEDULED])) {
+                $type = Post::TYPE_ACTIVE;
+            }
+        }
+
+        $query = $user->posts();
+        switch ($type) {
+            case Post::TYPE_ACTIVE:
+                $query->active();
+                break;
+            case Post::TYPE_EXPIRED:
+                $query->expired();
+                break;
+            case Post::TYPE_SCHEDULED:
+                $query->scheduled();
+                break;
+        }
+        $posts = $query->orderByRaw('GREATEST(created_at, schedule) desc')->paginate(config('misc.page.size'));
         return response()->json($posts);
     }
 
@@ -63,7 +86,7 @@ class PostController extends Controller
                 return response()->json([
                     'message' => '',
                     'errors' => [
-                        'schedule' => __('errors.schedule-must-be-in-future')
+                        'schedule' => [__('errors.schedule-must-be-in-future')]
                     ]
                 ], 422);
             }
@@ -124,6 +147,12 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
+        if ($post->user_id == auth()->user()->id) {
+            $post->media->map(function ($item) {
+                $item->append(['thumbs']);
+            });
+            $post->makeVisible(['schedule']);
+        }
         return response()->json($post);
     }
 
@@ -136,16 +165,19 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
-        // TODO: allow only owner
+        if ($post->user_id != auth()->user()->id) {
+            abort(403);
+        }
+
         $this->validate($request, [
             'message' => 'required|string|max:2000',
-            'media' => 'nullable|array',
+            'media' => 'nullable|array|max:' . config('misc.post.media.max'),
+            'poll' => 'nullable|array|min:2|max:' . config('misc.post.poll.max'),
             'media.*' => 'array',
             'media.*.id' => 'integer',
-            'media.*.screenshot' => 'integer',
-            'poll' => 'nullable|array|min:2',
-            'media.*' => 'integer',
-            'expires' => 'nullable|integer|min:1|max:30',
+            'media.*.screenshot' => 'nullable|integer',
+            'poll.*' => 'string|max:191',
+            'expires' => 'nullable|integer|min:1|max:' . config('misc.post.expire.max'),
             'schedule' => 'nullable|date',
             'price' => 'nullable|integer'
         ]);
@@ -168,8 +200,7 @@ class PostController extends Controller
 
         $price = $request->input('price');
         if ($price) {
-            // TODO: actually check if this account is free
-            if (!config('misc.pricing.allow_paid_posts_for_paid_accounts') && true) {
+            if (!config('misc.payment.pricing.allow_paid_posts_for_paid_accounts') && !$user->isFree) {
                 return response()->json([
                     'message' => '',
                     'errors' => [
@@ -194,7 +225,7 @@ class PostController extends Controller
             $models = $user->media()->whereIn('id', $media->keys())->get();
             foreach ($models as $model) {
                 $model->publish();
-                if ($media[$model->id]) {
+                if (isset($media[$model->id])) {
                     $info = $model->info;
                     $info['screenshot'] = $media[$model->id];
                     $model->info = $info;
@@ -205,8 +236,13 @@ class PostController extends Controller
         }
 
         $poll = $request->input('poll', []);
-        if (!count($poll) && $post->poll) {
-            $post->poll()->detach($post->poll->id);
+        foreach ($post->poll as $p) {
+            $p->delete();
+        }
+        foreach ($poll as $option) {
+            $post->poll()->create([
+                'option' => $option
+            ]);
         }
 
         $post->refresh()->load(['media', 'poll']);

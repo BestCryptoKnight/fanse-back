@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Storage;
 use DB;
+use Symfony\Component\HttpKernel\HttpCache\Store;
 
 class Media extends Model
 {
@@ -25,7 +26,7 @@ class Media extends Model
     ];
 
     protected $visible = [
-        'id', 'type', 'created_at', 'url', 'screenshot'
+        'id', 'type', 'created_at', 'url', 'screenshot', 'thumbs'
     ];
 
     protected $appends = [
@@ -84,6 +85,24 @@ class Media extends Model
                 . '/thumb_' . $this->info['screenshot'] . '.png');
         }
         return null;
+    }
+
+    public function getThumbsAttribute()
+    {
+        if ($this->type == self::TYPE_VIDEO) {
+            $thumbs = [];
+            $files = Storage::files($this->status == self::STATUS_TMP ? $this->tmpPath : $this->pubPath);
+            foreach ($files as $f) {
+                if (preg_match('/thumb_([0-9]+)\.png/', $f, $matches)) {
+                    $thumbs[] = [
+                        'id' => $matches[1][0],
+                        'url' => Storage::url($f)
+                    ];
+                }
+            }
+            return $thumbs;
+        }
+        return [];
     }
 
     public function publish()
