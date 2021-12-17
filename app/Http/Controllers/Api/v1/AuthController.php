@@ -38,7 +38,7 @@ class AuthController extends Controller
 
         $user->sendEmailVerificationNotification();
 
-        $token = $user->createToken('main');
+        $token = $user->createToken('main', $user->abilities);
         $user->makeAuth();
 
         // all good so return token and user info
@@ -84,7 +84,7 @@ class AuthController extends Controller
                 break;
         }
 
-        $token = $user->createToken('main');
+        $token = $user->createToken('main', $user->abilities);
         $user->makeAuth();
 
         // all good so return token and user info

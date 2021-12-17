@@ -16,7 +16,7 @@
         "intervention/image": "^2.6",
         "laravel/fortify": "^1.8",
         "laravel/framework": "^8.54",
-        "laravel/sanctum": "^2.11",
+        "laravel/sanctum": "^2.13",
         "laravel/tinker": "^2.6",
         "nesbot/carbon": "^2.53",
         "paypal/rest-api-sdk-php": "^1.14",

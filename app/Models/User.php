@@ -17,6 +17,7 @@ class User extends Authenticatable
 
     const ROLE_USER = 0;
     const ROLE_CREATOR = 1;
+    const ROLE_ADMIN = 10;
 
     const CHANNEL_EMAIL = 0;
     const CHANNEL_GOOGLE = 1;
@@ -167,5 +168,21 @@ class User extends Authenticatable
     public function getCoverAttribute($value)
     {
         return $value ? Storage::url('profile/cover/' . $this->id . '.jpg') : null;
+    }
+
+    public function getAbilitiesAttribute()
+    {
+        switch ($this->role) {
+            case self::ROLE_USER:
+                return ['user'];
+                break;
+            case self::ROLE_CREATOR:
+                return ['user', 'creator'];
+                break;
+            case self::ROLE_ADMIN:
+                return ['user', 'creator', 'admin'];
+                break;
+        }
+        return [];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class AddUpdates
         $response = $next($request);
         if ($response instanceof JsonResponse) {
             $user = auth()->user();
-            if ($user) {
+            if ($user && $user instanceof User) {
                 $user->loadCount(['notificationsNew', 'mailboxNew']);
                 $content = $response->getData(true);
                 $content['updates'] = [

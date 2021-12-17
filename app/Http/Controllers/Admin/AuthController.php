@@ -28,11 +28,11 @@ class AuthController extends Controller
             'password' => 'required'
         ]);
 
-        $token = auth('admin')->attempt($request->only([
+        $valid = auth()->attempt($request->only([
             'username', 'password'
         ]));
 
-        if (!$token) {
+        if (!$valid) {
             return response()->json([
                 'message' => '',
                 'errors' => [
@@ -41,9 +41,13 @@ class AuthController extends Controller
             ], 422);
         }
 
+        $user = auth()->user();
+        $token = $user->createToken('admin', $user->abilities);
+
         // all good so return token and user info
         return response()->json([
-            'token' => $token
+            'token' => $token->plainTextToken,
+            'user' => $user
         ]);
     }
 
@@ -67,20 +71,5 @@ class AuthController extends Controller
     {
         auth()->logout();
         return response()->json(['status' => true]);
-    }
-
-    /**
-     * Refresh a token.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     * @deprecated
-     */
-    public function refresh()
-    {
-        try {
-            return response()->json(['token' => auth()->refresh()]);
-        } catch (\Exception $e) {
-            abort(401, 'Unauthenticated.');
-        }
     }
 }

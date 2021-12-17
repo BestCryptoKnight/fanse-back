@@ -29,7 +29,7 @@ Route::get('payment/gateways', 'PaymentController@paymentGateways');
 // Route::post('log', 'UserController@dolog');
 
 // user
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
 
     // auth
     Route::prefix('auth')->group(function () {
