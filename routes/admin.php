@@ -12,5 +12,6 @@ Route::middleware(['auth:sanctum', 'abilities:admin'])->group(function () {
         Route::post('logout', 'AuthController@logout');
         Route::get('me', 'AuthController@me');
     });
-    Route::resource('users', 'UserController');
+    Route::get('users/list/{type?}', 'UserController@index');
+    Route::resource('users', 'UserController')->except(['index']);
 });

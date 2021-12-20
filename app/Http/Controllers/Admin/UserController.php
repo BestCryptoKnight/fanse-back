@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Hash;
 
 class UserController extends Controller
 {
@@ -14,14 +15,27 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index($type = null, Request $request)
     {
         $query = User::query();
         if ($request->input('q')) {
             $query->where('username', 'like', '%' . $request->input('q') . '%')
                 ->orWhere('name', 'like', '%' . $request->input('q') . '%');
         }
-        $users = $query->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+
+        switch ($type) {
+            case 'fans':
+                $query->where('role', User::ROLE_USER);
+                break;
+            case 'creators':
+                $query->where('role', User::ROLE_CREATOR);
+                break;
+            default:
+                $query->whereIn('role', [User::ROLE_USER, User::ROLE_CREATOR]);
+                break;
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->paginate(2/*config('misc.page.size')*/);
         return response()->json($users);
     }
 
@@ -33,6 +47,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        $user->makeAuth();
         return response()->json($user);
     }
 
@@ -50,13 +65,22 @@ class UserController extends Controller
             'name' => 'required|string|max:191',
             'bio' => 'nullable|string|max:1000',
             'location' => 'nullable|string|max:191',
-            'website' => 'nullable|string|url'
+            'website' => 'nullable|string|url',
+            'email' => 'required|email|unique:App\Models\User,email,' . $user->id,
+            'new_password' => 'nullable|min:8|confirmed',
         ]);
 
         $user->fill($request->only([
-            'username', 'name', 'bio', 'location', 'website'
+            'username', 'name', 'bio', 'location', 'website', 'email'
         ]));
+        if ($user->channel_type == User::CHANNEL_EMAIL) {
+            $user->channel_id = $user->email;
+        }
+        if ($request->input('new_password')) {
+            $user->password = Hash::make($request['new_password']);
+        }
         $user->save();
+        $user->makeAuth();
 
         return response()->json($user);
     }
