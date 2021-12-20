@@ -44,7 +44,7 @@ class User extends Authenticatable
     ];
 
     protected $visible = [
-        'id', 'username', 'name', 'role', 'avatar', 'cover', 'price', 'is_subscribed', 'bundles'
+        'id', 'username', 'name', 'role', 'avatar', 'cover', 'price', 'is_subscribed', 'bundles', 'verification'
     ];
 
     protected $with = ['subscribed'];
@@ -59,6 +59,13 @@ class User extends Authenticatable
                 while ($exists) {
                     $model->username = 'user' . rand(10000, 10000000);
                     $exists = self::where('username', $model->username)->exists();
+                }
+            }
+            if ($model->role === null) {
+                if (!config('misc.profile.creators.verification')) {
+                    $model->role = self::ROLE_CREATOR;
+                } else {
+                    $model->role = self::ROLE_USER;
                 }
             }
         });
@@ -148,6 +155,11 @@ class User extends Authenticatable
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function verification()
+    {
+        return $this->hasOne(Verification::class);
     }
 
     public function getIsSubscribedAttribute()

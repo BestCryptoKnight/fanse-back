@@ -104,6 +104,7 @@ class AuthController extends Controller
     {
         $user = auth()->user();
         $user->makeAuth();
+        $user->load('verification');
         return response()->json($user);
     }
 

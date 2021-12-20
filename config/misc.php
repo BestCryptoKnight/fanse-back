@@ -57,6 +57,11 @@ return [
     ],
 
     'profile' => [
+        'creators' => [
+            'verification' => [
+                'require' => true
+            ]
+        ],
         'avatar' => [
             'maxsize' => '20000',
             'resize' => '1080x1080',

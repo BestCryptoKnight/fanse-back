@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Verification;
 use Illuminate\Http\Request;
 use Image;
 use Storage;
 use Hash;
+use Illuminate\Validation\Rule;
 
 use function PHPSTORM_META\map;
 
@@ -130,14 +132,33 @@ class ProfileController extends Controller
         return response()->json($user);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(User $user)
+    public function verificationStore(Request $request)
     {
-        $user->delete();
+        $countries = require(resource_path('data/countries.php'));
+        $this->validate($request, [
+            'country' => [
+                'required',
+                Rule::in(array_keys($countries))
+            ],
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'address' => 'required|string|max:500',
+            'city' => 'required|string|max:100',
+            'state' => 'required|string|max:100',
+            'zip' => 'required|string|max:50',
+            'photo' => 'required|image'
+        ]);
+        $user = auth()->user();
+        $verification = Verification::firstOrNew(['user_id' => $user->id]);
+        $verification->fill([
+            'country' => $request['country'],
+            'info' => $request->only(['first_name', 'last_name', 'address', 'city', 'state', 'zip'])
+        ]);
+        $verification->save();
+
+        $image = $request->file('photo');
+        $image->storeAs('verifications', $verification->hash . '.jpg');
+
+        return response()->json($verification);
     }
 }
