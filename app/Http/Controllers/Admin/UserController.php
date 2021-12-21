@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\Verification;
 use Illuminate\Http\Request;
 use Hash;
 
@@ -17,7 +18,7 @@ class UserController extends Controller
      */
     public function index($type = null, Request $request)
     {
-        $query = User::query();
+        $query = User::whereNotIn('role', [User::ROLE_ADMIN]);
         if ($request->input('q')) {
             $query->where('username', 'like', '%' . $request->input('q') . '%')
                 ->orWhere('name', 'like', '%' . $request->input('q') . '%');
@@ -29,6 +30,11 @@ class UserController extends Controller
                 break;
             case 'creators':
                 $query->where('role', User::ROLE_CREATOR);
+                break;
+            case 'verification':
+                $query->with('verification')->whereHas('verification', function ($q) {
+                    $q->where('status', Verification::STATUS_PENDING);
+                });
                 break;
             default:
                 $query->whereIn('role', [User::ROLE_USER, User::ROLE_CREATOR]);
@@ -94,5 +100,31 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         $user->delete();
+    }
+
+    public function verificationApprove(User $user)
+    {
+        if ($user->verification) {
+            $user->verification->status = Verification::STATUS_APPROVED;
+            $user->verification->save();
+            $user->role = User::ROLE_CREATOR;
+            $user->save();
+        }
+        $user->refresh();
+        $user->load('verification');
+        return response()->json($user);
+    }
+
+    public function verificationDecline(User $user)
+    {
+        if ($user->verification) {
+            $user->verification->status = Verification::STATUS_DECLINED;
+            $user->verification->save();
+            $user->role = User::ROLE_USER;
+            $user->save();
+        }
+        $user->refresh();
+        $user->load('verification');
+        return response()->json($user);
     }
 }

@@ -154,11 +154,13 @@ class ProfileController extends Controller
             'country' => $request['country'],
             'info' => $request->only(['first_name', 'last_name', 'address', 'city', 'state', 'zip'])
         ]);
+        $verification->status = Verification::STATUS_PENDING;
         $verification->save();
 
         $image = $request->file('photo');
         $image->storeAs('verifications', $verification->hash . '.jpg');
 
+        $verification->refresh();
         return response()->json($verification);
     }
 }

@@ -16,7 +16,7 @@ class Verification extends Model
     const STATUS_DECLINED = 2;
 
     protected $fillable = [
-        'country', 'info', 'status'
+        'country', 'info', 'status', 'user_id'
     ];
 
     protected $casts = [
