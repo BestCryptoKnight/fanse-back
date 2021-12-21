@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePaymentsTable extends Migration
+class CreatePayoutsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,18 +13,12 @@ class CreatePaymentsTable extends Migration
      */
     public function up()
     {
-        Schema::create('payments', function (Blueprint $table) {
+        Schema::create('payouts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('to_id')->constrained('users')->onDelete('cascade');
-            $table->tinyInteger('type')->unsigned();
-            $table->string('hash');
-            $table->string('token')->nullable();
-            $table->string('gateway');
             $table->bigInteger('amount')->unsigned();
-            $table->string('currency');
-            $table->json('info')->nullable();
             $table->tinyInteger('status')->unsigned()->default(0);
+            $table->json('info');
             $table->timestamps();
             $table->softDeletes();
         });
@@ -37,6 +31,6 @@ class CreatePaymentsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('payments');
+        Schema::dropIfExists('payouts');
     }
 }

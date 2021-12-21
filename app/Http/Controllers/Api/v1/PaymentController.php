@@ -107,6 +107,7 @@ class PaymentController extends Controller
         $amount = 0;
         $bundle = null;
         $info = [];
+        $to = null;
         switch ($request['type']) {
             case Payment::TYPE_SUBSCRIPTION_NEW:
                 $info['sub_id'] = $request['sub_id'];
@@ -114,6 +115,7 @@ class PaymentController extends Controller
                 if ($user->id == $sub->id) {
                     abort(403);
                 }
+                $to = $sub->id;
                 $amount = $sub->price;
                 if ($request->input('bundle_id')) {
                     $info['bundle_id'] = $request['bundle_id'];
@@ -127,6 +129,7 @@ class PaymentController extends Controller
                 if ($user->id == $post->user_id) {
                     abort(403);
                 }
+                $to = $post->user_id;
                 $amount = $post->price;
                 break;
             case Payment::TYPE_MESSAGE:
@@ -135,6 +138,7 @@ class PaymentController extends Controller
                 if ($user->id == $message->party_id) {
                     abort(403);
                 }
+                $to = $message->party_id;
                 $amount = $message->price;
                 break;
         }
@@ -143,6 +147,7 @@ class PaymentController extends Controller
 
         $payment = $user->payments()->create([
             'type' => $request['type'],
+            'to_id' => $to,
             'info' => $info,
             'amount' => $amount,
             'currency' => config('misc.payment.currency.code'),

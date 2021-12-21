@@ -21,11 +21,11 @@ class Payment extends Model
     const STATUS_REFUNDED = 10;
 
     protected $fillable = [
-        'type', 'token', 'gateway', 'amount', 'currency', 'info', 'status', 'user_id', 'hash', 'status'
+        'type', 'token', 'gateway', 'amount', 'currency', 'info', 'status', 'user_id', 'hash', 'status', 'to_id'
     ];
 
     protected $visible = [
-        'type', 'hash', 'gateway', 'amount', 'currency', 'info', 'status'
+        'type', 'hash', 'gateway', 'amount', 'currency', 'info', 'status', 'to_id'
     ];
 
     protected $casts = [
@@ -49,5 +49,10 @@ class Payment extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function to()
+    {
+        return $this->belongsTo(User::class, 'to_id');
     }
 }

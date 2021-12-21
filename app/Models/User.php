@@ -158,6 +158,11 @@ class User extends Authenticatable
         return $this->hasMany(Payment::class);
     }
 
+    public function payouts()
+    {
+        return $this->hasMany(Payout::class);
+    }
+
     public function verification()
     {
         return $this->hasOne(Verification::class);
@@ -197,5 +202,12 @@ class User extends Authenticatable
                 break;
         }
         return [];
+    }
+
+    public function getBalanceAttribute()
+    {
+        $total = $this->payments()->where('status', Payment::STATUS_COMPLETE)->sum('amount');
+        $paid = $this->payouts()->where('status', Payout::STATUS_COMPLETE)->sum('amount');
+        return $total - $paid;
     }
 }
