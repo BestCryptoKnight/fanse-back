@@ -49,6 +49,9 @@ return [
                 'discount' => 50,
             ]
         ],
+        'payout' => [
+            'min' => 100
+        ],
         'currency' => [
             'symbol' => '$',
             'code' => 'USD',

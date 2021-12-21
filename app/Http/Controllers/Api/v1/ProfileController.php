@@ -163,4 +163,39 @@ class ProfileController extends Controller
         $verification->refresh();
         return response()->json($verification);
     }
+
+    public function bankStore(Request $request)
+    {
+        $this->validate($request, [
+            'address' => 'required|string|max:500',
+            'name' => 'required|string|max:100',
+            'swift' => 'required|string|max:100',
+            'account' => 'required|string|max:100'
+        ]);
+        $user = auth()->user();
+        $user->bank = $request->only(['address', 'name', 'swift', 'account']);
+        $user->save();
+
+        $user->refresh();
+        $user->load('verification');
+
+        return response()->json($user);
+    }
+
+    public function bankShow()
+    {
+        $user = auth()->user();
+        $user->makeAuth();
+        $user->load('verification');
+        $user->makeVisible(['bank']);
+
+        $settings = [
+            'payout' => config('misc.payment.payout.min')
+        ];
+
+        return response()->json([
+            'user' => $user,
+            'settings' => $settings
+        ]);
+    }
 }

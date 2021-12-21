@@ -54,6 +54,8 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::post('profile/email', 'ProfileController@email');
     Route::post('profile/password', 'ProfileController@password');
     Route::post('profile/verification', 'ProfileController@verificationStore');
+    Route::post('profile/bank', 'ProfileController@bankStore');
+    Route::get('profile/bank', 'ProfileController@bankShow');
 
     Route::post('bookmarks/{post}', 'BookmarkController@add');
     Route::get('bookmarks', 'BookmarkController@index');

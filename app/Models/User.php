@@ -49,6 +49,7 @@ class User extends Authenticatable
 
     protected $with = ['subscribed'];
     protected $appends = ['is_subscribed', 'is_free'];
+    protected $casts = ['bank' => 'array'];
 
     protected static function boot()
     {
