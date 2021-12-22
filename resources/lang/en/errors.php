@@ -8,4 +8,7 @@ return [
     'wrong-password' => 'Password is wrong.',
     'list-title-taken' => 'List already exists.',
     'order-can-not-be-processed' => 'Order can not be processed.',
+    'incorrect-amount' => 'Incorrect amount.',
+    'pending-withdrawal' => 'There is another pending withdrawal request.',
+    'no-payout-method-found' => 'No payout method found.',
 ];

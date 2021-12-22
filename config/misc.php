@@ -50,7 +50,7 @@ return [
             ]
         ],
         'payout' => [
-            'min' => 100
+            'min' => 1
         ],
         'currency' => [
             'symbol' => '$',

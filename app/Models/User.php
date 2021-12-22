@@ -49,7 +49,6 @@ class User extends Authenticatable
 
     protected $with = ['subscribed'];
     protected $appends = ['is_subscribed', 'is_free'];
-    protected $casts = ['bank' => 'array'];
 
     protected static function boot()
     {
@@ -163,9 +162,19 @@ class User extends Authenticatable
         return $this->hasMany(Payout::class);
     }
 
+    public function payoutMethod()
+    {
+        return $this->hasOne(PayoutMethod::class);
+    }
+
     public function verification()
     {
         return $this->hasOne(Verification::class);
+    }
+
+    public function getWithdrawAttribute()
+    {
+        return $this->payouts()->pending()->first();
     }
 
     public function getIsSubscribedAttribute()

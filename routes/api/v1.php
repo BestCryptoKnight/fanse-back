@@ -53,9 +53,14 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::post('profile', 'ProfileController@store');
     Route::post('profile/email', 'ProfileController@email');
     Route::post('profile/password', 'ProfileController@password');
-    Route::post('profile/verification', 'ProfileController@verificationStore');
-    Route::post('profile/bank', 'ProfileController@bankStore');
-    Route::get('profile/bank', 'ProfileController@bankShow');
+
+    Route::post('payouts/verification', 'PayoutController@verificationStore');
+    Route::get('payouts/verification', 'PayoutController@verificationShow');
+    Route::get('payouts', 'PayoutController@index');
+    Route::post('payouts', 'PayoutController@store');
+    Route::get('payouts/info', 'PayoutController@info');
+    Route::post('payouts/method', 'PayoutController@methodStore');
+    Route::put('payouts/method/{payout_method}', 'PayoutController@methodUpdate');
 
     Route::post('bookmarks/{post}', 'BookmarkController@add');
     Route::get('bookmarks', 'BookmarkController@index');
