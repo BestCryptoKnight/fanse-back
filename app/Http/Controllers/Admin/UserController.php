@@ -41,7 +41,7 @@ class UserController extends Controller
                 break;
         }
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(2/*config('misc.page.size')*/);
+        $users = $query->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
         return response()->json($users);
     }
 

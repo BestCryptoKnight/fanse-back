@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use DB;
 
 class Subscription extends Model
 {
@@ -24,7 +25,7 @@ class Subscription extends Model
     ];
 
     protected $visible = [
-        'id', 'sub', 'expires', 'info', 'amount', 'active'
+        'id', 'sub', 'expires', 'info', 'amount', 'active', 'total', 'fee', 'created_at', 'user'
     ];
 
     protected static function boot()
@@ -57,5 +58,20 @@ class Subscription extends Model
     public function sub()
     {
         return $this->belongsTo(User::class, 'sub_id');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'info->sub_id', 'sub_id');
+    }
+
+    public function getTotalAttribute()
+    {
+        return $this->payments()->where('status', Payment::STATUS_COMPLETE)->sum('amount');
+    }
+
+    public function getFeeAttribute()
+    {
+        return $this->payments()->where('status', Payment::STATUS_COMPLETE)->sum(DB::raw('amount * (fee/100)'));
     }
 }

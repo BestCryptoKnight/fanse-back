@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Payment;
+use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
@@ -33,6 +34,18 @@ class PaymentSeeder extends Seeder
                     'status' => Payment::STATUS_COMPLETE,
                     'gateway' => 'paypal',
                 ]);
+                $sub = Subscription::where('user_id', $user->id)->where('sub_id', $demo->id)->first();
+                if (!$sub) {
+                    $sub = new Subscription([
+                        'user_id' => $user->id,
+                        'sub_id' => $demo->id
+                    ]);
+                    $sub->amount = 2000;
+                    $sub->gateway = "paypal";
+                    $sub->expires = Carbon::now()->addDays(30);
+                    $sub->active = true;
+                    $sub->save();
+                }
             } else {
                 $post = $posts[rand(0, count($posts) - 1)];
                 $payments[] = Payment::create([

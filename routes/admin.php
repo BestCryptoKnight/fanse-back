@@ -16,4 +16,9 @@ Route::middleware(['auth:sanctum', 'abilities:admin'])->group(function () {
     Route::post('users/verification/approve/{user}', 'UserController@verificationApprove');
     Route::post('users/verification/decline/{user}', 'UserController@verificationDecline');
     Route::resource('users', 'UserController')->except(['index']);
+
+    Route::get('subscriptions/list/{type?}', 'SubscriptionController@index');
+    Route::post('subscriptions/{subscription}', 'SubscriptionController@resume');
+    Route::put('subscriptions/{subscription}', 'SubscriptionController@cancel');
+    Route::delete('subscriptions/{subscription}', 'SubscriptionController@destroy');
 });
