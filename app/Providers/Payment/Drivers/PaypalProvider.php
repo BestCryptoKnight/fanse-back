@@ -70,7 +70,7 @@ class PaypalProvider extends AbstractProvider
 
         $amount = new Amount();
         $amount->setTotal($paymentModel->amount / 100);
-        $amount->setCurrency($paymentModel->currency);
+        $amount->setCurrency(config('misc.payment.currency.code'));
 
         $transaction = new Transaction();
         $transaction->setAmount($amount);
@@ -114,7 +114,7 @@ class PaypalProvider extends AbstractProvider
             ->setType('REGULAR')
             ->setFrequency('Month')
             ->setFrequencyInterval($bundle ? $bundle->months : 1)
-            ->setAmount(new Currency(array('value' => ($paymentModel->amount / 100), 'currency' => $paymentModel->currency)));
+            ->setAmount(new Currency(array('value' => ($paymentModel->amount / 100), 'currency' => config('misc.payment.currency.code'))));
 
         $merchantPreferences = new MerchantPreferences();
 
@@ -248,7 +248,6 @@ class PaypalProvider extends AbstractProvider
                         'type' => PaymentModel::TYPE_SUBSCRIPTION_RENEW,
                         'info' => $info,
                         'amount' => $firstPaymentModel->amount,
-                        'currency' => $firstPaymentModel->currency,
                         'gateway' => $this->getId(),
                         'token' => $agreement->getId(),
                         'status' => PaymentModel::STATUS_COMPLETE,

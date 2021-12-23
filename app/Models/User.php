@@ -10,6 +10,7 @@ use Auth;
 use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
+use DB;
 
 class User extends Authenticatable
 {
@@ -157,6 +158,11 @@ class User extends Authenticatable
         return $this->hasMany(Payment::class);
     }
 
+    public function earnings()
+    {
+        return $this->hasMany(Payment::class, 'to_id');
+    }
+
     public function payouts()
     {
         return $this->hasMany(Payout::class);
@@ -215,7 +221,7 @@ class User extends Authenticatable
 
     public function getBalanceAttribute()
     {
-        $total = $this->payments()->where('status', Payment::STATUS_COMPLETE)->sum('amount');
+        $total = $this->earnings()->where('status', Payment::STATUS_COMPLETE)->sum(DB::raw('amount * (1 - fee/100)'));
         $paid = $this->payouts()->where('status', Payout::STATUS_COMPLETE)->sum('amount');
         return $total - $paid;
     }

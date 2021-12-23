@@ -57,6 +57,7 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::post('payouts/verification', 'PayoutController@verificationStore');
     Route::get('payouts/verification', 'PayoutController@verificationShow');
     Route::get('payouts', 'PayoutController@index');
+    Route::get('earnings', 'PayoutController@earningsIndex');
     Route::post('payouts', 'PayoutController@store');
     Route::get('payouts/info', 'PayoutController@info');
     Route::post('payouts/method', 'PayoutController@methodStore');

@@ -31,8 +31,9 @@ class AuthController extends Controller
         $valid = auth()->attempt($request->only([
             'username', 'password'
         ]));
+        $user = auth()->user();
 
-        if (!$valid) {
+        if (!$valid || ($user && $user->role != User::ROLE_ADMIN)) {
             return response()->json([
                 'message' => '',
                 'errors' => [
@@ -41,7 +42,7 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user = auth()->user();
+
         $token = $user->createToken('admin', $user->abilities);
 
         // all good so return token and user info

@@ -135,10 +135,10 @@ class PaymentController extends Controller
             case Payment::TYPE_MESSAGE:
                 $info['message_id'] = $request['message_id'];
                 $message = Message::findOrFail($info['message_id']);
-                if ($user->id == $message->party_id) {
+                if ($user->id == $message->user_id) {
                     abort(403);
                 }
-                $to = $message->party_id;
+                $to = $message->user_id;
                 $amount = $message->price;
                 break;
         }
@@ -150,7 +150,6 @@ class PaymentController extends Controller
             'to_id' => $to,
             'info' => $info,
             'amount' => $amount,
-            'currency' => config('misc.payment.currency.code'),
             'gateway' => $gateway->getId()
         ]);
 

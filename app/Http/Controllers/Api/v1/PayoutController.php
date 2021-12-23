@@ -93,7 +93,7 @@ class PayoutController extends Controller
 
     public function verificationShow()
     {
-        return response()->json(auth()->user()->verification);
+        return response()->json(['verification' => auth()->user()->verification]);
     }
 
     public function methodStore(Request $request)
@@ -163,5 +163,12 @@ class PayoutController extends Controller
             'stats' => $stats,
             'settings' => $settings,
         ]);
+    }
+
+    public function earningsIndex()
+    {
+        $user = auth()->user();
+        $earnings = $user->earnings()->with('user')->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+        return response()->json($earnings);
     }
 }

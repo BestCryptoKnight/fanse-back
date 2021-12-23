@@ -21,16 +21,22 @@ class Payment extends Model
     const STATUS_REFUNDED = 10;
 
     protected $fillable = [
-        'type', 'token', 'gateway', 'amount', 'currency', 'info', 'status', 'user_id', 'hash', 'status', 'to_id'
+        'type', 'token', 'gateway', 'amount', 'info', 'status', 'user_id', 'hash', 'status', 'to_id', 'fee'
     ];
 
     protected $visible = [
-        'type', 'hash', 'gateway', 'amount', 'currency', 'info', 'status', 'to_id'
+        'type', 'hash', 'gateway', 'amount', 'info', 'status', 'fee', 'user', 'items', 'to', 'created_at'
     ];
 
     protected $casts = [
         'info' => 'array'
     ];
+
+    protected $appends = [
+        'items'
+    ];
+
+    protected $with = ['user', 'to'];
 
     protected static function boot()
     {
@@ -43,6 +49,9 @@ class Payment extends Model
                     $exists = self::where('hash', $model->hash)->exists();
                 }
             }
+            if (!$model->fee) {
+                $model->fee = config('misc.payment.fee') * 100;
+            }
         });
     }
 
@@ -54,5 +63,27 @@ class Payment extends Model
     public function to()
     {
         return $this->belongsTo(User::class, 'to_id');
+    }
+
+    public function getItemsAttribute()
+    {
+        $items = [];
+        foreach ($this->info as $k => $v) {
+            switch ($k) {
+                case 'comment_id':
+                    $items['comment'] = Comment::find($v);
+                    break;
+                case 'post_id':
+                    $items['post'] = Post::find($v);
+                    break;
+                case 'sub_id':
+                    $items['sub'] = User::find($v);
+                    break;
+                case 'bundle_id':
+                    $items['bundle'] = Bundle::find($v);
+                    break;
+            }
+        }
+        return $items;
     }
 }
