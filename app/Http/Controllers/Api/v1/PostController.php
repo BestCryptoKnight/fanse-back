@@ -147,7 +147,7 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        if ($post->user_id == auth()->user()->id) {
+        if ($post->user_id == auth()->user()->id || auth()->user()->isAdmin) {
             $post->media->map(function ($item) {
                 $item->append(['thumbs']);
             });
@@ -165,7 +165,7 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
-        if ($post->user_id != auth()->user()->id) {
+        if ($post->user_id != auth()->user()->id && !auth()->user()->isAdmin) {
             abort(403);
         }
 
@@ -257,7 +257,7 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-        if ($post->user_id == auth()->user()->id) {
+        if ($post->user_id == auth()->user()->id || auth()->user()->isAdmin) {
             Notification::where('info->post_id', $post->id)->delete();
             $post->delete();
         }

@@ -225,4 +225,9 @@ class User extends Authenticatable
         $paid = $this->payouts()->where('status', Payout::STATUS_COMPLETE)->sum('amount');
         return $total - $paid;
     }
+
+    public function getIsAdminAttribute()
+    {
+        return $this->role == self::ROLE_ADMIN;
+    }
 }
