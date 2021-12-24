@@ -21,4 +21,8 @@ Route::middleware(['auth:sanctum', 'abilities:admin'])->group(function () {
     Route::post('subscriptions/{subscription}', 'SubscriptionController@resume');
     Route::put('subscriptions/{subscription}', 'SubscriptionController@cancel');
     Route::delete('subscriptions/{subscription}', 'SubscriptionController@destroy');
+
+    Route::get('payments/list/{type?}', 'PaymentController@index');
+    Route::put('payments/{payment}', 'PaymentController@update');
+    Route::delete('payments/{payment}', 'PaymentController@destroy');
 });

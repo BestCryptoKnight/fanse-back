@@ -164,61 +164,18 @@ class PaymentController extends Controller
     {
         $gateway = PaymentGateway::driver($gateway);
         $payment = $gateway->validate($request);
-        $response = ['status' => true];
         if ($payment) {
-            switch ($payment->type) {
-                case Payment::TYPE_SUBSCRIPTION_NEW:
-                    $sub = User::findOrFail($payment->info['sub_id']);
-                    $expires = Carbon::now('UTC')->addMonth();
-                    $info = null;
-                    if (isset($payment->info['bundle_id'])) {
-                        $bundle = $sub->bundles()->findOrFail($payment->info['bundle_id']);
-                        $expires = Carbon::now('UTC')->addMonths($bundle->months);
-                        $info = [
-                            'bundle_id' => $bundle->id
-                        ];
-                    }
-                    $subscription = $payment->user->subscriptions()->where('token', $payment->token)->first();
-                    if (!$subscription) {
-                        $subscription = $payment->user->subscriptions()->create([
-                            'sub_id' => $payment->info['sub_id'],
-                            'token' => $payment->token,
-                            'gateway' => $payment->gateway,
-                            'amount' => $payment->amount,
-                            'expires' => $expires,
-                            'info' => $info
-                        ]);
-                    }
-                    $response['user'] = $sub;
-                    break;
-                case Payment::TYPE_SUBSCRIPTION_RENEW:
-                    if (isset($payment->info['expire'])) {
-                        $subscription = $payment->user->subscriptions()->where('token', $payment->token)->first();
-                        $subscription->expire = new Carbon($payment->info['expire']);
-                        $subscription->save();
-                    }
-                    break;
-                case Payment::TYPE_POST:
-                    $post = Post::findOrFail($payment->info['post_id']);
-                    $post->access()->attach($payment->user->id);
-                    $response['post'] = $post;
-                    break;
-                case Payment::TYPE_MESSAGE:
-                    $message = Message::with('user')->findOrFail($payment->info['message_id']);
-                    $message->access()->attach($payment->user->id);
-                    $response['message'] = $message;
-                    break;
-            }
+            $response = PaymentGateway::processPayment($payment);
+            $response['status'] = true;
             $payment->status = Payment::STATUS_COMPLETE;
             $payment->save();
             return response()->json($response);
-        } else {
-            return response()->json([
-                'message' => '',
-                'errors' => [
-                    '_' => [__('errors.order-can-not-be-processed')]
-                ]
-            ], 422);
         }
+        return response()->json([
+            'message' => '',
+            'errors' => [
+                '_' => [__('errors.order-can-not-be-processed')]
+            ]
+        ], 422);
     }
 }

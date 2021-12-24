@@ -25,7 +25,7 @@ class Payment extends Model
     ];
 
     protected $visible = [
-        'type', 'hash', 'gateway', 'amount', 'info', 'status', 'fee', 'user', 'items', 'to', 'created_at'
+        'id', 'type', 'hash', 'gateway', 'amount', 'info', 'status', 'fee', 'user', 'items', 'to', 'created_at'
     ];
 
     protected $casts = [
