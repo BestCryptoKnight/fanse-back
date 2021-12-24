@@ -22,8 +22,8 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::get('/test', 'PaymentController@test');
-Route::post('process/{gateway}', 'PaymentController@paymentProcess');
-Route::get('payment/gateways', 'PaymentController@paymentGateways');
+Route::post('process/{gateway}', 'PaymentController@process');
+Route::get('gateways', 'PaymentController@gateways');
 
 // dummy function
 // Route::post('log', 'UserController@dolog');
@@ -87,6 +87,8 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::put('price/bundle/{bundle}', 'PaymentController@bundleUpdate');
     Route::delete('price/bundle/{bundle}', 'PaymentController@bundleDestroy');
 
-    Route::post('payment', 'PaymentController@paymentStore');
+    Route::post('payments', 'PaymentController@store');
+    Route::get('payments', 'PaymentController@index');
+
     Route::get('notifications', 'NotificationController@index');
 });

@@ -86,4 +86,9 @@ class Payment extends Model
         }
         return $items;
     }
+
+    public function scopeComplete($q)
+    {
+        $q->where('status', self::STATUS_COMPLETE);
+    }
 }

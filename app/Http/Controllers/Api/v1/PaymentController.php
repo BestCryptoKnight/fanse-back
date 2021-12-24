@@ -16,7 +16,13 @@ use Payment as PaymentGateway;
 
 class PaymentController extends Controller
 {
-    public function paymentGateways()
+    public function index()
+    {
+        $payments = auth()->user()->payments()->complete()->orderBy('updated_at', 'desc')->paginate(config('misc.page.size'));
+        return response()->json($payments);
+    }
+
+    public function gateways()
     {
         $drivers = PaymentGateway::getEnabledDrivers();
         $dd = [];
@@ -78,7 +84,7 @@ class PaymentController extends Controller
         return response()->json($user);
     }
 
-    public function paymentStore(Request $request)
+    public function store(Request $request)
     {
         $drivers = PaymentGateway::getEnabledDrivers();
         $gateways = [];
@@ -160,7 +166,7 @@ class PaymentController extends Controller
         return response()->json($response);
     }
 
-    public function paymentProcess(string $gateway, Request $request)
+    public function process(string $gateway, Request $request)
     {
         $gateway = PaymentGateway::driver($gateway);
         $payment = $gateway->validate($request);
