@@ -23,7 +23,6 @@ class CreatePaymentsTable extends Migration
             $table->string('gateway');
             $table->bigInteger('amount')->unsigned();
             $table->tinyInteger('fee')->unsigned();
-            $table->string('currency');
             $table->json('info')->nullable();
             $table->tinyInteger('status')->unsigned()->default(0);
             $table->timestamps();

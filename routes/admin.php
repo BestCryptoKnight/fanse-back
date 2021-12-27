@@ -25,4 +25,6 @@ Route::middleware(['auth:sanctum', 'abilities:admin'])->group(function () {
     Route::get('payments/list/{type?}', 'PaymentController@index');
     Route::put('payments/{payment}', 'PaymentController@update');
     Route::delete('payments/{payment}', 'PaymentController@destroy');
+
+    Route::get('stats', 'StatsController@index');
 });
