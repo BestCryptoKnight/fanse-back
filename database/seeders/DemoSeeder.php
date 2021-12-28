@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Media;
 use App\Models\Notification;
+use App\Models\PayoutMethod;
 use App\Models\User;
+use App\Models\Verification;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Faker;
@@ -40,9 +42,11 @@ class DemoSeeder extends Seeder
             $password = $k == 0 ? 'password' : $faker->password;
             $price = $k % 2 == 0 ? 0 : 2000;
             $username = str_replace('.', '_', $faker->username);
+            $firstName = $faker->firstName('female');
+            $lastName = $faker->lastName;
             $user = User::create([
                 'email' => $email,
-                'name' => $faker->firstName('female') . ' ' . $faker->lastName,
+                'name' =>  $firstName . ' ' . $lastName,
                 'username' => $faker->username,
                 'password' => Hash::make($password),
                 'channel_id' => $email,
@@ -54,7 +58,28 @@ class DemoSeeder extends Seeder
                 'website' => 'https://' . $faker->domainName,
                 'price' => $price,
                 'email_verified_at' => Carbon::now(),
+                'role' => User::ROLE_CREATOR,
             ]);
+            $days = rand(1, 30);
+            $user->created_at = Carbon::now('UTC')->subDays($days);
+
+            $user->verification()->create([
+                'country' => 'US',
+                'info' => [
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'address' => '7744 Columbia St',
+                    'city' => 'New York',
+                    'state' => 'NY',
+                    'zip' => '10128'
+                ],
+                'status' => Verification::STATUS_APPROVED
+            ]);
+            $user->payoutMethod()->create([
+                'type' => PayoutMethod::TYPE_PAYPAL,
+                'info' => ['paypal' => $email]
+            ]);
+
             // upload avatar and cover
             $avatar = Storage::disk('local')->path($avatars[$k]);
             Storage::put('profile/avatar/' . $user->id . '.jpg', file_get_contents($avatar));
@@ -73,6 +98,7 @@ class DemoSeeder extends Seeder
                 ]);
             }
 
+            // posts
             for ($i = 0; $i < 5; $i++) {
                 $num = rand(1, 3);
                 $ms = collect([]);
@@ -84,7 +110,7 @@ class DemoSeeder extends Seeder
                     }
                 }
                 $post = $user->posts()->create([
-                    'message' => $faker->realText(100),
+                    'message' => $this->postText(count($posts)),
                     'price' => $user->price ? null : rand(0, 1) * 1000,
                 ]);
                 foreach ($ms as $m) {
@@ -93,18 +119,20 @@ class DemoSeeder extends Seeder
                     $m->save();
                 }
                 $post->media()->sync($ms->pluck('id'));
+                $post->created_at = Carbon::now('UTC')->subHours(rand(10, $days * 24));
+                $post->save();
                 $posts[] = $post;
                 //break;
             }
+
+            $user->save();
             $users[] = $user;
             //break;
         }
 
-        // shuffle posts
+        // comments
+        $comments = [];
         foreach ($posts as $post) {
-            $ago = rand(1, 100);
-            $post->created_at = Carbon::now('UTC')->subHours($ago);
-            $post->save();
             $l = rand(3, 12);
             for ($i = 0; $i < $l; $i++) {
                 $user = $users[rand(0, count($users) - 1)];
@@ -112,8 +140,13 @@ class DemoSeeder extends Seeder
 
                 $comment = $post->comments()->create([
                     'user_id' => $user->id,
-                    'message' => $faker->realText(50)
+                    'message' => $this->commentText(count($comments))
                 ]);
+                $when = $post->created_at->addMinutes(rand(1, 60));
+                $comment->created_at = $when;
+                $comment->save();
+                $comments[] = $comment;
+
                 $noti = $post->user->notifications()->create([
                     'type' => Notification::TYPE_COMMENT,
                     'info' => [
@@ -122,8 +155,46 @@ class DemoSeeder extends Seeder
                         'post_id' => $post->id
                     ]
                 ]);
-                $noti->created_at = Carbon::now('UTC')->subMinutes(rand(0, $ago * 24 * 60));
+                $noti->created_at = $when;
                 $noti->save();
+            }
+        }
+
+        // messages
+        $messages = [];
+        foreach ($users as $user) {
+            foreach ($users as $current) {
+                if ($current->id == $user->id) {
+                    continue;
+                }
+                $message = $user->messages()->create([
+                    'message' => $this->commentText(count($messages))
+                ]);
+                $message->created_at = Carbon::now('UTC')->subMinutes(rand(0, 3600));
+                $message->save();
+                $current->mailbox()->attach($message, ['party_id' => $user->id, 'read' => true]);
+                $user->mailbox()->attach($message, ['party_id' => $current->id, 'read' => true]);
+                $messages[] = $message;
+            }
+        }
+
+        // bookmarks
+        foreach ($users as $user) {
+            foreach ($posts as $post) {
+                $rand = rand(0, 3);
+                if ($rand == 0) {
+                    $user->bookmarks()->toggle([$post->id]);
+                }
+            }
+        }
+
+        // lists
+        foreach ($users as $user) {
+            foreach ($users as $current) {
+                if ($current->id == $user->id) {
+                    continue;
+                }
+                $current->listees()->attach($user->id, ['list_ids' => [0]]);
             }
         }
     }
@@ -141,5 +212,74 @@ class DemoSeeder extends Seeder
             Storage::disk('local')->copy($file, 'public/media/' . $media->hash . '/' . basename($file));
         }
         return $media;
+    }
+
+    private function postText($i)
+    {
+        $options = [
+            "Y'all really don't know how crazy I can get 🙈 on the plane",
+            "Your little showgirl 🤩",
+            "You couldn't have possibly thought Christmas was over yet… Did you? 😜 Keep an eye out for more gifts in your DM…❤️🦌",
+            "happy monday! new week, new goals. what are you setting out to accomplish this week? I think mine is to focus on my studies! 🤓",
+            "Only in your wildest dreams 🐆🤎",
+            "Not your average girl next door 🏡🙇🏼‍♀️",
+            "Tuesday's are better with me 😜 do u agree or do u agree?",
+            "Happy Monday babe!! I'm up for a fun week 😏 r u???",
+            "Am I your favorite girl? 💛",
+            "My eyes are up here 😏",
+            "Do y'all like it when I'm sweet... or sour 🍬😏?",
+            "When life gives you lemons...🍋💜💛",
+            "Felt so good to be back in the studio today 💓🎼",
+            "These tan lines about to be crazyyy 😂",
+            "Whose down? 🥵",
+            "Happiest outside 🥰",
+            "Do you know what's in the backpack? 🤪",
+            "Finally finishing moving in... I miss u! Let's catch up 😘",
+            "I need a study buddy 🙃",
+            "It's the dramatic gaze for me 🤍",
+            "National Mean Girls Day 💕💅🏼",
+            "This has me feeling some type of way 🙊",
+            "Bet you didn't know I had skills like this but what can I say? I'm a woman of many talents 🤪",
+            "who's ready for this next set? 🥵🥵🥵 I can't wait to blow your minds 🤯 dropping tonight 👀👀👀👀👀",
+            "happiest in pjs😘",
+            "Girly Glam ✨",
+            "welcome to my LALA land ❤️",
+            "I swear July and August only lasted like 2 seconds lol... hello September 💙",
+            "See the beauty in every day... la vie en rose 🌹",
+            "who wants to challenge me to a game of cod?😈",
+            "can I be your flower girl?😋",
+            "What's for breakfast? 🍳",
+            "know what's on the menu? ME-N-U 😜",
+            "You miss all the shots you don't take. Don't miss this one... 😉",
+            "my green eyes aren't the only thing saying hi😉🍒",
+        ];
+        return isset($options[$i]) ? $options[$i] : $options[rand(0, count($options) - 1)];
+    }
+
+    private function commentText($i)
+    {
+        $options = [
+            "Yes!! 😍☀️",
+            "👍",
+            "😻🔥",
+            "😍😍",
+            "Lovely and Beautiful 😍🌸",
+            "it wasn't that naughty😂",
+            "Oh damn baby",
+            "😍😍😍beautiful ♥️♥️♥️♥️♥️",
+            "Going to find out who's been naughty or nice 🤶🎄🎁🍑🔥💖😋",
+            "Love you babe❤️",
+            "I love the new pink hair awesome on u I love your energy n vibe mwah",
+            "👏🏼👏🏼",
+            "What's that song called 😅 love the dance btw👌",
+            "Te amo preciosa",
+            "Omg you look delicious!",
+            "🔥so hot",
+            "🤩🤩🤩🤩",
+        ];
+        if ($i >= count($options)) {
+            $i = $i % count($options);
+        }
+        return $options[$i];
     }
 }
