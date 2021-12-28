@@ -20,6 +20,8 @@ class MediaController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Post::class);
+
         set_time_limit(0);
 
         $this->validate($request, [
@@ -85,6 +87,7 @@ class MediaController extends Controller
      */
     public function destroy(Media $media)
     {
+        $this->authorize('delete', $media);
         $media->delete();
         return response()->json(['status' => true]);
     }

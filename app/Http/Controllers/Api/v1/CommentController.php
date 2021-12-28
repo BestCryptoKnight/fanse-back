@@ -68,10 +68,8 @@ class CommentController extends Controller
      */
     public function destroy(Comment $comment)
     {
-        if ($comment->user_id == auth()->user()->id || auth()->user()->isAdmin) {
-            Notification::where('info->comment_id', $comment->id)->delete();
-            $comment->delete();
-        }
+        $this->authorize('delete', $comment);
+        $comment->delete();
         return response()->json(['status' => true]);
     }
 

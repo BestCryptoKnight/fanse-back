@@ -23,7 +23,7 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::active()->orderByRaw('GREATEST(created_at, schedule) desc')->paginate(config('misc.page.size'));
+        $posts = Post::active()->orderByRaw('IF(schedule IS NULL,created_at,schedule) desc')->paginate(config('misc.page.size'));
         return response()->json($posts);
     }
 
@@ -51,7 +51,7 @@ class PostController extends Controller
                 $query->scheduled();
                 break;
         }
-        $posts = $query->orderByRaw('GREATEST(created_at, schedule) desc')->paginate(config('misc.page.size'));
+        $posts = $query->orderByRaw('IF(schedule IS NULL,created_at,schedule) desc')->paginate(config('misc.page.size'));
         return response()->json($posts);
     }
 
@@ -63,6 +63,8 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Post::class);
+
         $this->validate($request, [
             'message' => 'required|string|max:2000',
             'media' => 'nullable|array|max:' . config('misc.post.media.max'),
@@ -165,9 +167,7 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
-        if ($post->user_id != auth()->user()->id && !auth()->user()->isAdmin) {
-            abort(403);
-        }
+        $this->authorize('update', $post);
 
         $this->validate($request, [
             'message' => 'required|string|max:2000',
@@ -257,10 +257,8 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-        if ($post->user_id == auth()->user()->id || auth()->user()->isAdmin) {
-            Notification::where('info->post_id', $post->id)->delete();
-            $post->delete();
-        }
+        $this->authorize('delete', $post);
+        $post->delete();
         return response()->json(['status' => true]);
     }
 

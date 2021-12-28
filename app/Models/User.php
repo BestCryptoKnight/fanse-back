@@ -231,6 +231,11 @@ class User extends Authenticatable
         return $this->role == self::ROLE_ADMIN;
     }
 
+    public function getIsCreatorAttribute()
+    {
+        return $this->role == self::ROLE_CREATOR;
+    }
+
     public static function typeToString(int $type)
     {
         switch ($type) {
