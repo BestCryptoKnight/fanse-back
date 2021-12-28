@@ -230,4 +230,14 @@ class User extends Authenticatable
     {
         return $this->role == self::ROLE_ADMIN;
     }
+
+    public static function typeToString(int $type)
+    {
+        switch ($type) {
+            case self::CHANNEL_GOOGLE:
+                return 'google';
+            case self::CHANNEL_EMAIL:
+                return 'email';
+        }
+    }
 }

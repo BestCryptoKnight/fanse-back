@@ -14,6 +14,7 @@ use Image;
 use Illuminate\Validation\Rule;
 use Log;
 use Hash;
+use Socialite;
 
 class AuthController extends Controller
 {
@@ -80,7 +81,35 @@ class AuthController extends Controller
                 }
                 break;
             case User::CHANNEL_GOOGLE:
-                // create user here if needed
+                $duser = null;
+                $driver = Socialite::driver(User::typeToString($request['channel_type']));
+                try {
+                    $duser = $driver->userFromToken($request['token']);
+                } catch (\Exception $e) {
+                    // failed
+                }
+                if (!$duser) {
+                    return response()->json([
+                        'message' => '',
+                        'errors' => [
+                            '_' => __('errors.login-failed')
+                        ]
+                    ], 422);
+                }
+
+                $user = User::where([
+                    'channel_type' => $request['channel_type'],
+                    'channel_id' => $duser->id,
+                ])->first();
+
+                if (!$user) {
+                    $user = User::create([
+                        'channel_type' => $request['channel_type'],
+                        'channel_id' => $duser->id,
+                        'name' => $duser->getName(),
+                        'email' => $duser->getEmail()
+                    ]);
+                }
                 break;
         }
 

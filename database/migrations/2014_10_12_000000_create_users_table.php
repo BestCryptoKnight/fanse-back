@@ -18,7 +18,7 @@ class CreateUsersTable extends Migration
             $table->string('name');
             $table->string('username')->unique();
             $table->string('email')->unique();
-            $table->string('password');
+            $table->string('password')->nullable();
             $table->tinyInteger('channel_type')->default(0)->comment('0 - email, 1 - twitter, 2 - google');
             $table->string('channel_id');
             $table->timestamp('email_verified_at')->nullable();
