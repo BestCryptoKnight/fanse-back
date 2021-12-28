@@ -14,6 +14,14 @@ class StatsController extends Controller
 {
     public function index(Request $request)
     {
+        $totals = [
+            'users' => User::count(),
+            'posts' => Post::count(),
+            'sales' => Payment::where('status', Payment::STATUS_COMPLETE)->sum('amount') * 1,
+            'fees' => Payment::where('status', Payment::STATUS_COMPLETE)->sum(DB::raw('amount * (fee/100)')) * 1,
+        ];
+
+
         $users = DB::table('users')->selectRaw('DATE(created_at) d, COUNT(DISTINCT id) c')->groupByRaw('DATE(created_at)');
         $posts = DB::table('posts')->selectRaw('DATE(IF(schedule IS NOT NULL, schedule, created_at)) d, COUNT(DISTINCT id) c')
             ->groupByRaw('DATE(IF(schedule IS NOT NULL, schedule, created_at))');
@@ -46,6 +54,7 @@ class StatsController extends Controller
             'posts' => $posts->get()->pluck('c', 'd'),
             'payments' => $payments->get()->pluck('c', 'd'),
             'fees' => $fees->get()->pluck('c', 'd'),
+            'totals' => $totals
         ]);
     }
 }
