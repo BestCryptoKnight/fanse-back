@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Media;
 use App\Models\Notification;
+use App\Models\Payment;
+use App\Models\Payout;
 use App\Models\PayoutMethod;
 use App\Models\User;
 use App\Models\Verification;
@@ -40,7 +42,7 @@ class DemoSeeder extends Seeder
         foreach ($avatars as $k => $a) {
             $email = $k == 0 ? 'demo@uniprogy.com' : $faker->unique()->safeEmail();
             $password = $k == 0 ? 'password' : $faker->password;
-            $price = $k % 2 == 0 ? 0 : 2000;
+            $price = $k == 0 || $k % 2 == 0 ? 0 : 2000;
             $username = str_replace('.', '_', $faker->username);
             $firstName = $faker->firstName('female');
             $lastName = $faker->lastName;
@@ -109,9 +111,10 @@ class DemoSeeder extends Seeder
                         $position = 0;
                     }
                 }
+                $rand = rand(0, 3);
                 $post = $user->posts()->create([
                     'message' => $this->postText(count($posts)),
-                    'price' => $user->price ? null : rand(0, 1) * 1000,
+                    'price' => $user->price ? null : ($user->id == 1 || $rand == 0 ? 1000 : null),
                 ]);
                 foreach ($ms as $m) {
                     $m->info = ['screenshot' => 0];
@@ -147,30 +150,33 @@ class DemoSeeder extends Seeder
                 $comment->save();
                 $comments[] = $comment;
 
-                $noti = $post->user->notifications()->create([
-                    'type' => Notification::TYPE_COMMENT,
-                    'info' => [
-                        'comment_id' => $comment->id,
-                        'user_id' => $comment->user_id,
-                        'post_id' => $post->id
-                    ]
-                ]);
-                $noti->created_at = $when;
-                $noti->save();
+                if ($post->user->id == 1) {
+                    $noti = $post->user->notifications()->create([
+                        'type' => Notification::TYPE_COMMENT,
+                        'info' => [
+                            'comment_id' => $comment->id,
+                            'user_id' => $comment->user_id,
+                            'post_id' => $post->id
+                        ]
+                    ]);
+                    $noti->created_at = $when;
+                    $noti->save();
+                }
             }
         }
 
         // messages
         $messages = [];
-        foreach ($users as $user) {
-            foreach ($users as $current) {
-                if ($current->id == $user->id) {
-                    continue;
-                }
-                $message = $user->messages()->create([
+        $user = $users[0];
+        foreach ($users as $current) {
+            if ($current->id == $user->id) {
+                continue;
+            }
+            for ($i = 0; $i < 5; $i++) {
+                $message = ($i % 2 == 0 ? $user->messages() : $current->messages())->create([
                     'message' => $this->commentText(count($messages))
                 ]);
-                $message->created_at = Carbon::now('UTC')->subMinutes(rand(0, 3600));
+                $message->created_at = Carbon::now('UTC')->subMinutes(rand(0, 240));
                 $message->save();
                 $current->mailbox()->attach($message, ['party_id' => $user->id, 'read' => true]);
                 $user->mailbox()->attach($message, ['party_id' => $current->id, 'read' => true]);
@@ -179,23 +185,89 @@ class DemoSeeder extends Seeder
         }
 
         // bookmarks
-        foreach ($users as $user) {
-            foreach ($posts as $post) {
-                $rand = rand(0, 3);
-                if ($rand == 0) {
-                    $user->bookmarks()->toggle([$post->id]);
-                }
+        foreach ($posts as $post) {
+            $rand = rand(0, 3);
+            if ($rand == 0) {
+                $user->bookmarks()->toggle([$post->id]);
             }
         }
 
         // lists
-        foreach ($users as $user) {
-            foreach ($users as $current) {
-                if ($current->id == $user->id) {
-                    continue;
-                }
-                $current->listees()->attach($user->id, ['list_ids' => [0]]);
+        foreach ($users as $current) {
+            if ($current->id == $user->id) {
+                continue;
             }
+            $user->listees()->attach($current->id, ['list_ids' => [0]]);
+        }
+
+        // subscriptions
+        foreach ($users as $current) {
+            if ($current->id == $user->id || !$current->price) {
+                continue;
+            }
+            if (
+                in_array($current->id, [2, 6])
+            ) {
+                $created = Carbon::now('UTC')->subDays(rand(1, 30));
+                $token = 'PP-XX-' . rand(100000, 999999);
+                $payment = $user->payments()->create([
+                    'type' => Payment::TYPE_SUBSCRIPTION_NEW,
+                    'token' => $token,
+                    'to_id' => $current->id,
+                    'info' => ['sub_id' => $current->id],
+                    'amount' => $current->price,
+                    'gateway' => "paypal",
+                    'status' => Payment::STATUS_COMPLETE
+                ]);
+                $payment->created_at = $created;
+                $payment->save();
+                $expires = $created->copy()->addMonths(1);
+                $subscription = $user->subscriptions()->create([
+                    'sub_id' => $current->id,
+                    'token' => $token,
+                    'gateway' => "paypal",
+                    'amount' => $current->price,
+                    'expires' => $expires,
+                    'info' => ['sub_id' => $current->id]
+                ]);
+            }
+        }
+
+        // payments for posts
+        foreach ($users as $current) {
+            if ($current->id == $user->id || !$current->price) {
+                continue;
+            }
+            foreach ($posts as $post) {
+                if ($post->user_id == $user->id) {
+                    $token = 'PP-XX-' . rand(100000, 999999);
+                    $created = Carbon::now('UTC')->subDays(rand(1, 30));
+                    $payment = $current->payments()->create([
+                        'type' => Payment::TYPE_POST,
+                        'to_id' => $user->id,
+                        'info' => ['post_id' => $post->id],
+                        'amount' => $post->price,
+                        'token' => $token,
+                        'gateway' => "paypal",
+                        'status' => Payment::STATUS_COMPLETE
+                    ]);
+                    $payment->created_at = $created;
+                    $payment->save();
+                }
+            }
+        }
+
+        // payouts
+        for ($i = 0; $i < 5; $i++) {
+            $created = Carbon::now('UTC')->subDays(rand(1, 30));
+            $payout = $user->payouts()->create([
+                'amount' => rand(1, 3) * 1000,
+                'info' => $user->payoutMethod,
+                'status' => Payout::STATUS_COMPLETE
+            ]);
+            $payout->created_at = $created;
+            $payout->updated_at = $created;
+            $payout->save();
         }
     }
 
