@@ -29,6 +29,11 @@ class DemoSeeder extends Seeder
     {
         $faker = Faker\Factory::create();
 
+        // clean media
+        Storage::deleteDirectory('profile');
+        Storage::deleteDirectory('media');
+
+
         // media
         $avatars = Storage::disk('local')->files('demo/avatar');
         $covers = Storage::disk('local')->files('demo/landscape');
@@ -258,7 +263,7 @@ class DemoSeeder extends Seeder
         }
 
         // payouts
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 3; $i++) {
             $created = Carbon::now('UTC')->subDays(rand(1, 30));
             $payout = $user->payouts()->create([
                 'amount' => rand(1, 3) * 1000,

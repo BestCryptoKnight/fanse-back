@@ -23,7 +23,7 @@ return [
 
     'media' => [
         'mimes' => 'jpg,png,heic,mp4,avi,mov,m4a,ogg',
-        'maxsize' => 3000000, // 3 gb
+        'maxsize' => 100000, // 100 mb
     ],
 
     'post' => [
