@@ -3,12 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Comment extends Model
 {
-    use SoftDeletes;
-
     protected $fillable = [
         'user_id', 'message'
     ];
@@ -35,7 +32,7 @@ class Comment extends Model
     public function liked()
     {
         $user = auth()->user();
-        return $user ? $this->likes()->where('users.id', $user->id) : [];
+        return $this->likes()->where('users.id', $user ? $user->id : null);
     }
 
     public function user()

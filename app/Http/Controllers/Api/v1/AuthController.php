@@ -14,6 +14,7 @@ use Image;
 use Illuminate\Validation\Rule;
 use Log;
 use Hash;
+use Socialite;
 
 class AuthController extends Controller
 {
@@ -24,7 +25,6 @@ class AuthController extends Controller
             'password' => [
                 'required',
                 'min:8',
-                'confirmed'
             ],
             'name' => 'required|min:3'
         ], [
@@ -37,7 +37,9 @@ class AuthController extends Controller
         $data['channel_type'] = User::CHANNEL_EMAIL;
         $user = User::create($data);
 
-        $token = $user->createToken('main');
+        $user->sendEmailVerificationNotification();
+
+        $token = $user->createToken('main', $user->abilities);
         $user->makeAuth();
 
         // all good so return token and user info
@@ -79,11 +81,39 @@ class AuthController extends Controller
                 }
                 break;
             case User::CHANNEL_GOOGLE:
-                // create user here if needed
+                $duser = null;
+                $driver = Socialite::driver(User::typeToString($request['channel_type']));
+                try {
+                    $duser = $driver->userFromToken($request['token']);
+                } catch (\Exception $e) {
+                    // failed
+                }
+                if (!$duser) {
+                    return response()->json([
+                        'message' => '',
+                        'errors' => [
+                            '_' => __('errors.login-failed')
+                        ]
+                    ], 422);
+                }
+
+                $user = User::where([
+                    'channel_type' => $request['channel_type'],
+                    'channel_id' => $duser->id,
+                ])->first();
+
+                if (!$user) {
+                    $user = User::create([
+                        'channel_type' => $request['channel_type'],
+                        'channel_id' => $duser->id,
+                        'name' => $duser->getName(),
+                        'email' => $duser->getEmail()
+                    ]);
+                }
                 break;
         }
 
-        $token = $user->createToken('main');
+        $token = $user->createToken('main', $user->abilities);
         $user->makeAuth();
 
         // all good so return token and user info
@@ -115,21 +145,6 @@ class AuthController extends Controller
     {
         auth()->user()->currentAccessToken()->delete();
         return response()->json(['status' => true]);
-    }
-
-    /**
-     * Refresh a token.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     * @deprecated
-     */
-    public function refresh()
-    {
-        try {
-            return response()->json(['token' => auth()->refresh()]);
-        } catch (\Exception $e) {
-            abort(401, 'Unauthenticated.');
-        }
     }
 
     public function dolog()

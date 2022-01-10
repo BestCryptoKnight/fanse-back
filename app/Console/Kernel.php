@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Models\Media;
+use App\Models\Subscription;
 use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -36,7 +37,7 @@ class Kernel extends ConsoleKernel
 
         $now = Carbon::now('UTC')->setSeconds(0)->setMilliseconds(0);
 
-        // open whatsapp communication before the show
+        // delete tmp medias
         $schedule->call(
             function () use ($now) {
                 $media = Media::where('status', Media::STATUS_TMP)
@@ -47,6 +48,16 @@ class Kernel extends ConsoleKernel
                 }
             }
         )->hourly();
+
+        // delete expired subscriptions
+        $schedule->call(
+            function () use ($now) {
+                $subs = Subscription::where('expires', '>=', $now)->get();
+                foreach ($subs as $s) {
+                    $s->delete();
+                }
+            }
+        )->daily();
     }
 
     /**

@@ -10,7 +10,17 @@ class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        $notifications = auth()->user()->notifications()->paginate(config('misc.page.size'));
+        $notifications = auth()->user()->notifications()->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+        $unviewed = [];
+        foreach ($notifications as $n) {
+            if (!$n->viewed) {
+                $unviewed[] = $n->id;
+            }
+        }
+        Notification::whereIn('id', $unviewed)->update([
+            'viewed' => 1
+        ]);
+
         return response()->json($notifications);
     }
 }

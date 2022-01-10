@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Verification;
 use Illuminate\Http\Request;
 use Image;
 use Storage;
 use Hash;
+use Illuminate\Validation\Rule;
 
 use function PHPSTORM_META\map;
 
@@ -25,7 +27,7 @@ class ProfileController extends Controller
 
         // new image uploaded
         if ($file = $request->file('image')) {
-            list($w, $h) = explode('x', config('misc.profile.image.resize'));
+            list($w, $h) = explode('x', config('misc.profile.' . $type . '.resize'));
             $path = storage_path('app/tmp') . DIRECTORY_SEPARATOR . $user->id . '-' . $type . '.' . $file->extension();
             $image = Image::make($file)->orientate()->fit($w, $h, function ($constraint) {
                 $constraint->upsize();
@@ -77,14 +79,28 @@ class ProfileController extends Controller
     {
         $user = auth()->user();
         $this->validate($request, [
-            'email' => 'required|email|unique:App\Models\User,username,' . $user->email
+            'email' => 'required|email|unique:App\Models\User,email,' . $user->id,
+            'password' => 'required|string',
         ]);
-        $user->email = $request['email'];
-        if ($user->channel_type == User::CHANNEL_EMAIL) {
-            $user->channel_id = $user->email;
+
+        if (!Hash::check($request['password'], $user->password)) {
+            return response()->json([
+                'message' => '',
+                'errors' => [
+                    'password' => [__('errors.wrong-password')]
+                ]
+            ], 422);
         }
-        $user->save();
-        // TODO: email verification
+
+        if ($user->email != $request['email']) {
+            $user->email = $request['email'];
+            if ($user->channel_type == User::CHANNEL_EMAIL) {
+                $user->channel_id = $user->email;
+            }
+            $user->save();
+            $user->sendEmailVerificationNotification();
+        }
+
         $user->makeAuth();
         return response()->json($user);
     }
@@ -114,16 +130,5 @@ class ProfileController extends Controller
         // TODO: notify about password change via email
         $user->makeAuth();
         return response()->json($user);
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\User  $user
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(User $user)
-    {
-        $user->delete();
     }
 }

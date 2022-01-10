@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -9,7 +10,11 @@ class Post extends Model
 {
     use SoftDeletes;
 
-    protected $with = ['media', 'poll', 'user', 'liked'];
+    const TYPE_ACTIVE = 0;
+    const TYPE_SCHEDULED = 1;
+    const TYPE_EXPIRED = 2;
+
+    protected $with = ['media', 'poll', 'user', 'liked', 'accessed'];
 
     protected $fillable = [
         'message', 'expires', 'schedule', 'price'
@@ -20,14 +25,40 @@ class Post extends Model
     ];
 
     protected $visible = [
-        'id', 'message', 'expires', 'price', 'poll', 'media', 'created_at', 'user', 'likes_count', 'comments_count', 'is_liked'
+        'id', 'message', 'expires', 'price', 'poll', 'media', 'published_at', 'user',
+        'likes_count', 'comments_count', 'is_liked', 'is_bookmarked', 'has_voted', 'has_access'
     ];
 
     protected $withCount = [
         'likes', 'comments'
     ];
 
-    protected $appends = ['is_liked'];
+    protected $appends = ['is_liked', 'is_bookmarked', 'has_voted', 'has_access', 'published_at'];
+
+    public function scopeActive($query)
+    {
+        $now = Carbon::now('UTC');
+        return $query
+            ->where(function ($q) use ($now) {
+                $q->whereNull('schedule')->orWhere('schedule', '<', $now);
+            })
+            ->where(function ($q) use ($now) {
+                $q->whereNull('expires')
+                    ->orWhereRaw('DATE_ADD(GREATEST(created_at, schedule), INTERVAL expires DAY) > ?', [$now]);
+            });
+    }
+
+    public function scopeExpired($query)
+    {
+        $now = Carbon::now('UTC');
+        return $query->whereNotNull('expires')->whereRaw('DATE_ADD(GREATEST(created_at, schedule), INTERVAL expires DAY) < ?', [$now]);
+    }
+
+    public function scopeScheduled($query)
+    {
+        $now = Carbon::now('UTC');
+        return $query->whereNotNull('schedule')->where('schedule', '>', $now);
+    }
 
     public function user()
     {
@@ -52,7 +83,13 @@ class Post extends Model
     public function liked()
     {
         $user = auth()->user();
-        return $user ? $this->likes()->where('users.id', $user->id) : [];
+        return $this->likes()->where('users.id', $user ? $user->id : null);
+    }
+
+    public function bookmarked()
+    {
+        $user = auth()->user();
+        return $this->belongsToMany(User::class, 'bookmarks')->where('users.id', $user ? $user->id : null);
     }
 
     public function comments()
@@ -60,8 +97,73 @@ class Post extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function access()
+    {
+        return $this->belongsToMany(User::class, 'access_post');
+    }
+
+    public function accessed()
+    {
+        $user = auth()->user();
+        return $this->belongsToMany(User::class, 'access_post')->where('users.id', $user ? $user->id : null);
+    }
+
     public function getIsLikedAttribute()
     {
         return count($this->liked) > 0;
+    }
+
+    public function getIsBookmarkedAttribute()
+    {
+        return count($this->bookmarked) > 0;
+    }
+
+    public function getHasVotedAttribute()
+    {
+        foreach ($this->poll as $p) {
+            if ($p->hasVoted) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function getIsFreeAttribute()
+    {
+        return $this->price == 0;
+    }
+
+    public function getHasAccessAttribute()
+    {
+        $user = auth()->user();
+        if ($user && ($user->isAdmin || $this->user->id == auth()->user()->id)) {
+            return true;
+        }
+
+        if ($this->user->isFree) {
+            if ($this->isFree) {
+                return true;
+            } else if (count($this->accessed) > 0) {
+                return true;
+            }
+        } else if ($this->user->isSubscribed) {
+            return true;
+        }
+        return false;
+    }
+
+    public function getPublishedAtAttribute()
+    {
+        return max($this->schedule, $this->created_at);
+    }
+
+    public function toArray()
+    {
+        if (!$this->hasAccess) {
+            foreach ($this->media as $m) {
+                $m->makeHidden(['url', 'screenshot']);
+            }
+        }
+        return parent::toArray();
     }
 }

@@ -20,6 +20,8 @@ class MediaController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', Post::class);
+
         set_time_limit(0);
 
         $this->validate($request, [
@@ -43,8 +45,6 @@ class MediaController extends Controller
             $type = Media::TYPE_IMAGE;
         }
 
-        $thumbs = [];
-
         if ($type !== null) {
             $media = $user->media()->create([
                 'type' => $type,
@@ -64,10 +64,6 @@ class MediaController extends Controller
                         $mediaOpener = $mediaOpener->getFrameFromSeconds($tstamp)
                             ->export()
                             ->save("tmp/" . $media->hash . "/thumb_{$i}.png");
-                        $thumbs[] = [
-                            'id' => $i,
-                            'url' => Storage::url('tmp') . '/' . $media->hash . "/thumb_{$i}.png"
-                        ];
                     } catch (\Exception $e) {
                         //Log::debug($e->getMessage());
                         $mediaOpener = FFMpeg::open('tmp/' . $media->hash . '/media.' . $file->extension());
@@ -78,11 +74,9 @@ class MediaController extends Controller
             }
         }
 
-        return response()->json([
-            'media' => $media,
-            'type' => $type,
-            'thumbs' => $thumbs
-        ]);
+        $media->append(['thumbs']);
+
+        return response()->json($media);
     }
 
     /**
@@ -93,6 +87,7 @@ class MediaController extends Controller
      */
     public function destroy(Media $media)
     {
+        $this->authorize('delete', $media);
         $media->delete();
         return response()->json(['status' => true]);
     }

@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,3 +17,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return config('app.name') . ' API version ' . config('app.version');
 });
+
+Route::get('/password-reset', function (Request $request) {
+    return redirect()->away(config('app.app_url') . $request->getPathInfo() . '?' . $request->getQueryString());
+})->name('password.reset');

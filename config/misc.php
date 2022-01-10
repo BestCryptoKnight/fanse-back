@@ -38,14 +38,41 @@ return [
         ]
     ],
 
-    'pricing' => [
-        'allow_paid_posts_for_paid_accounts' => true
+    'payment' => [
+        'pricing' => [
+            'allow_paid_posts_for_paid_accounts' => false,
+            'caps' => [
+                'subscription' => 50,
+                'tip' => 100,
+                'post' => 100,
+                'message' => 100,
+                'discount' => 50,
+            ]
+        ],
+        'payout' => [
+            'min' => 1
+        ],
+        'currency' => [
+            'symbol' => '$',
+            'code' => 'USD',
+            'format' => '%1$s%2$d',
+        ],
+        'fee' => '0.2',
     ],
 
     'profile' => [
-        'image' => [
+        'creators' => [
+            'verification' => [
+                'require' => true
+            ]
+        ],
+        'avatar' => [
             'maxsize' => '20000',
             'resize' => '1080x1080',
+        ],
+        'cover' => [
+            'maxsize' => '20000',
+            'resize' => '1920x1080',
         ],
     ],
 

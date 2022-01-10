@@ -19,7 +19,7 @@ class CreatePostsTable extends Migration
             $table->text('message');
             $table->tinyInteger('expires')->nullable();
             $table->dateTime('schedule')->nullable();
-            $table->bigInteger('price')->nullable();
+            $table->bigInteger('price')->unsigned()->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
