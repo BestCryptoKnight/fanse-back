@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,6 +23,8 @@ Route::prefix('auth')->group(function () {
 
 Route::post('process/{gateway}', 'PaymentController@process');
 Route::get('gateways', 'PaymentController@gateways');
+
+Broadcast::routes(['middleware' => ['auth:sanctum', 'abilities:user']]);
 
 // dummy function
 // Route::post('log', 'UserController@dolog');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\v1;
 
+use App\Events\MessageEvent;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\User;
@@ -99,6 +100,9 @@ class MessageController extends Controller
         // mailbox
         $current->mailbox()->attach($message, ['party_id' => $user->id]);
         $user->mailbox()->attach($message, ['party_id' => $current->id]);
+
+        // notify
+        MessageEvent::dispatch($user, $message);
 
         $message->refresh()->load('media');
         return response()->json($message);
