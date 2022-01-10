@@ -111,54 +111,30 @@ class CentrobillProvider extends AbstractProvider
 
     public function validate(Request $request)
     {
-        if (isset($request['paymentId']) && isset($request['PayerID'])) {
-            return $this->validatePayment($request);
-        } else if (isset($request['token'])) {
-            return $this->validateSubscription($request);
-        } else if (isset($request['event_type']) && $request['event_type'] == 'BILLING.SUBSCRIPTION.RENEWED') {
-            return $this->validateRenewSubscription($request);
-        }
-        return false;
-    }
-
-    private function validatePayment(Request $request)
-    {
-        try {
-            $payment = Payment::get($request['paymentId'], $this->getApi());
-            $execution = new PaymentExecution();
-            $execution->setPayerId($request->PayerID);
-            $payment = $payment->execute($execution, $this->getApi());
-            if ($payment->getState() == 'approved') {
-                $paymentModel = PaymentModel::where('hash', $payment->transactions[0]->getInvoiceNumber())->first();
-                if ($paymentModel) {
-                    $paymentModel->status = PaymentModel::STATUS_COMPLETE;
-                    $paymentModel->token = $payment->getId();
-                    $paymentModel->save();
-                    return $paymentModel;
+        if (isset($request['metadata']['hash'])) {
+            $payment = PaymentModel::where('hash', $request['metadata']['hash'])->first();
+            if ($payment) {
+                switch ($payment->type) {
+                    case PaymentModel::TYPE_MESSAGE:
+                    case PaymentModel::TYPE_POST:
+                    case PaymentModel::TYPE_SUBSCRIPTION_NEW:
+                        return $this->validatePayment($request, $payment);
+                    case PaymentModel::TYPE_SUBSCRIPTION_RENEW:
+                        return $this->validateRenewSubscription($request, $payment);
                 }
             }
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
         }
         return false;
     }
 
-    private function validateSubscription(Request $request)
+    private function validatePayment(Request $request, PaymentModel $paymentModel)
     {
         try {
-            $agreement = new Agreement();
-            $agreement->execute($request['token'], $this->getApi());
-
-            $agreement = Agreement::get($agreement->getId(), $this->getApi());
-
-            if ($agreement->getState() == 'Active') {
-                $paymentModel = PaymentModel::where('hash', $agreement->getDescription())->first();
-                if ($paymentModel) {
-                    $paymentModel->status = PaymentModel::STATUS_COMPLETE;
-                    $paymentModel->token = $agreement->getId();
-                    $paymentModel->save();
-                    return $paymentModel;
-                }
+            if ($request['payment']['code'] * 1 == 0 && $request['payment']['mode'] == 'sale' && $request['payment']['status'] == 'success') {
+                $paymentModel->status = PaymentModel::STATUS_COMPLETE;
+                $paymentModel->token = $request['payment']['transactionId'];
+                $paymentModel->save();
+                return $paymentModel;
             }
         } catch (\Exception $e) {
             Log::error($e->getMessage());
@@ -168,39 +144,6 @@ class CentrobillProvider extends AbstractProvider
 
     private function validateRenewSubscription(Request $request)
     {
-        try {
-            $agreement = Agreement::get($request['resource']['id'], $this->getApi());
-
-            if ($agreement->getState() == 'Active') {
-                $existing = PaymentModel::where(
-                    'hash',
-                    $request['resource']['description']
-                        . '..'
-                        . $request['resource']['agreement_details']['cycles_completed']
-                )->first();
-                if ($existing) {
-                    return $existing;
-                }
-                $firstPaymentModel = PaymentModel::where('hash', $request['resource']['description'])->first();
-                if ($firstPaymentModel) {
-                    $info = $firstPaymentModel->info;
-                    $info['expire'] = $request['resource']['agreement_details']['next_billing_date'];
-                    $newPaymentModel = Payment::create([
-                        'hash' => $firstPaymentModel->hash . '..' . $request['resource']['agreement_details']['cycles_completed'],
-                        'user_id' => $firstPaymentModel->user_id,
-                        'type' => PaymentModel::TYPE_SUBSCRIPTION_RENEW,
-                        'info' => $info,
-                        'amount' => $firstPaymentModel->amount,
-                        'gateway' => $this->getId(),
-                        'token' => $agreement->getId(),
-                        'status' => PaymentModel::STATUS_COMPLETE,
-                    ]);
-                    return $newPaymentModel;
-                }
-            }
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
-        }
         return false;
     }
 }
