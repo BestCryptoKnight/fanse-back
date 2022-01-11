@@ -67,6 +67,18 @@ class PaymentManager extends Manager
         return $enabled;
     }
 
+    public function getCCDriver()
+    {
+        $available = ['paypal', 'centrobill'];
+        foreach ($available as $a) {
+            $driver = $this->driver($a);
+            if ($driver->isEnabled() && $driver->isCC()) {
+                return $driver;
+            }
+        }
+        return null;
+    }
+
     public function processPayment(Payment $payment)
     {
         $response = [];

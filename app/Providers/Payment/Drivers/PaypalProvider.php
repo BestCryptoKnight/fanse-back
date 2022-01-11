@@ -49,6 +49,11 @@ class PaypalProvider extends AbstractProvider
         return 'paypal';
     }
 
+    public function isCC()
+    {
+        return false;
+    }
+
     public function getApi()
     {
         if (!$this->api) {

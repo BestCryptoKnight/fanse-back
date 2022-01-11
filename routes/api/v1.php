@@ -97,6 +97,9 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::delete('price/bundle/{bundle}', 'PaymentController@bundleDestroy');
     Route::post('payments', 'PaymentController@store');
     Route::get('payments', 'PaymentController@index');
+    Route::post('payments/method', 'PaymentController@methodStore');
+    Route::put('payments/method', 'PaymentController@methodMain');
+    Route::delete('payments/method', 'PaymentController@methodDestroy');
 
     // notifications
     Route::get('notifications', 'NotificationController@index');

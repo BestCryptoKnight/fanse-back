@@ -21,6 +21,7 @@ abstract class AbstractProvider
         return !isset($this->config['enabled']) || $this->config['enabled'];
     }
 
+    abstract function isCC();
     abstract function getName();
     abstract function getId();
     abstract function buy(PaymentModel $payment);

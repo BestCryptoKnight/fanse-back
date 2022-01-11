@@ -13,7 +13,7 @@ use Log;
 
 class CentrobillProvider extends AbstractProvider
 {
-    protected $api;
+    private $url = 'https://api.centrobill.com';
 
     protected $name = 'CentroBill';
 
@@ -25,6 +25,36 @@ class CentrobillProvider extends AbstractProvider
     public function getId()
     {
         return 'centrobill';
+    }
+
+    public function isCC()
+    {
+        return true;
+    }
+
+    public function ccGetToken($data)
+    {
+        $client = new Client();
+        $payload = [
+            'number' => $data['card_number'],
+            'expirationYear' => $data['expiration_year'],
+            'expirationMonth' => $data['expiration_month'],
+            'cvv' => $data['cvv'],
+            'cardHolder' => $data['card_holder'],
+        ];
+
+        try {
+            $response = $client->request('POST', $url . '/tokenize', [
+                'headers' => [
+                    'Authorization' => $this->config['service']['api_key']
+                ],
+                'json' => $payload
+            ]);
+            $json = json_decode($response->getBody());
+            return ['token' => $json['token'], 'expire' => $json['expireAt']];
+        } catch (\Exception $ex) {
+            Log::error($ex->getMessage());
+        }
     }
 
     public function buy(PaymentModel $paymentModel)

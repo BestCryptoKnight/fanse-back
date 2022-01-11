@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Bundle;
 use App\Models\Message;
 use App\Models\Payment;
+use App\Models\PaymentMethod;
 use App\Models\Post;
 use App\Models\Subscription;
 use App\Models\User;
@@ -183,5 +184,54 @@ class PaymentController extends Controller
                 '_' => [__('errors.order-can-not-be-processed')]
             ]
         ], 422);
+    }
+
+    public function methodStore(Request $request)
+    {
+        $this->validate($request, [
+            'card_number' => [
+                'required',
+                new CardNumber
+            ],
+            'card_holder' => [
+                'required',
+            ],
+            'expiration_month' => [
+                'required',
+                new CardExpirationMonth($request->input('expiration_year'))
+            ],
+            'expiration_year' => [
+                'required',
+                new CardExpirationMonth($request->input('expiration_month'))
+            ],
+            'cvc' => [
+                'required',
+                new CardCvc($$request->input('card_number'))
+            ]
+        ]);
+
+        $driver = PaymentGateway::getCCDriver();
+        if (!$driver) {
+            abort(500, 'CC Driver is not set.');
+        }
+
+        $token = $driver->ccGetToken($request->only(['card_number', 'card_holder', 'expiration_month', 'expiration_year', 'cvc']));
+        $info = [
+            'token' => $token,
+            'title' => '****' . substr($request['card_number'], -4),
+        ];
+
+        $user = auth()->user();
+        $m = $user->paymentMethods()->create([
+            'info' => $info,
+            'type' => PaymentMethod::TYPE_CARD,
+        ]);
+        if (!$user->mainPaymentMethod) {
+            $m->main = true;
+            $m->save();
+        }
+
+        $m->refresh();
+        return response()->json($m);
     }
 }
