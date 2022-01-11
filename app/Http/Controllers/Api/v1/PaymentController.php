@@ -159,14 +159,6 @@ class PaymentController extends Controller
             'gateway' => $gateway->getId()
         ]);
 
-        // demo
-        $response = PaymentGateway::processPayment($payment);
-        $response['status'] = true;
-        $payment->token = 'PP-XX-' . rand(100000, 999999);
-        $payment->status = Payment::STATUS_COMPLETE;
-        $payment->save();
-        return response()->json($response);
-
         $response = $request['type'] == Payment::TYPE_SUBSCRIPTION_NEW
             ? $gateway->subscribe($payment, $sub, $bundle)
             : $gateway->buy($payment);

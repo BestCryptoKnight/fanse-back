@@ -62,7 +62,7 @@ class CentrobillProvider extends AbstractProvider
             $json = json_decode($response->getBody());
             return ['redirect' => $json['url']];
         } catch (\Exception $ex) {
-            Log::error($ex->getData());
+            Log::error($ex->getMessage());
         }
     }
 
@@ -105,7 +105,7 @@ class CentrobillProvider extends AbstractProvider
             $json = json_decode($response->getBody());
             return ['redirect' => $json['url']];
         } catch (\Exception $ex) {
-            Log::error($ex->getData());
+            Log::error($ex->getMessage());
         }
     }
 

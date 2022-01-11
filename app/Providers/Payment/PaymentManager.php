@@ -6,6 +6,7 @@ use App\Models\Message;
 use App\Models\Payment;
 use App\Models\Post;
 use App\Models\User;
+use App\Providers\Payment\Drivers\CentrobillProvider;
 use App\Providers\Payment\Drivers\PaypalProvider;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
@@ -21,6 +22,15 @@ class PaymentManager extends Manager
         $config = $this->container->make('config')['services.paypal'];
         return $this->buildProvider(
             PaypalProvider::class,
+            $config
+        );
+    }
+
+    protected function createCentrobillDriver()
+    {
+        $config = $this->container->make('config')['services.centrobill'];
+        return $this->buildProvider(
+            CentrobillProvider::class,
             $config
         );
     }
@@ -42,7 +52,7 @@ class PaymentManager extends Manager
 
     public function getEnabledDrivers()
     {
-        $available = ['paypal'];
+        $available = ['paypal', 'centrobill'];
         $enabled = [];
         foreach ($available as $a) {
             //try {
