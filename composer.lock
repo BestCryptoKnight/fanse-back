@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "559cf4c2094dded1e2b49db24a89ef8d",
+    "content-hash": "b330f4d7801817f5b0118934953e6578",
     "packages": [
         {
             "name": "alchemy/binary-driver",
@@ -1639,60 +1639,6 @@
                 }
             ],
             "time": "2021-12-16T16:49:26+00:00"
-        },
-        {
-            "name": "laravel-validation-rules/credit-card",
-            "version": "1.6.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/laravel-validation-rules/credit-card.git",
-                "reference": "0c20ee11d7647a605f05460fcdffd2b0442cda8a"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/laravel-validation-rules/credit-card/zipball/0c20ee11d7647a605f05460fcdffd2b0442cda8a",
-                "reference": "0c20ee11d7647a605f05460fcdffd2b0442cda8a",
-                "shasum": ""
-            },
-            "require": {
-                "illuminate/support": "^5.5|^6.0|^7.0|^8.0",
-                "illuminate/translation": "^5.5|^6.0|^7.0|^8.0",
-                "illuminate/validation": "^5.5|^6.0|^7.0|^8.0",
-                "php": "7.*|8.*"
-            },
-            "require-dev": {
-                "friendsofphp/php-cs-fixer": "~2.5",
-                "orchestra/testbench": "^3.5|^4.0|^5.0",
-                "phpunit/phpunit": "6.2.*|^8.5.8|^9.3.3"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "LVR\\CreditCard\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Apache-2.0"
-            ],
-            "authors": [
-                {
-                    "name": "Darius Matulionis",
-                    "email": "darius@matulionis.lt"
-                }
-            ],
-            "description": "Validate credit card number, expiration date, cvc",
-            "keywords": [
-                "credit card",
-                "laravel",
-                "validation",
-                "validator"
-            ],
-            "support": {
-                "issues": "https://github.com/laravel-validation-rules/credit-card/issues",
-                "source": "https://github.com/laravel-validation-rules/credit-card/tree/1.6.0"
-            },
-            "time": "2021-01-27T20:14:50+00:00"
         },
         {
             "name": "laravel/fortify",

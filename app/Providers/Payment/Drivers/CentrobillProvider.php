@@ -32,27 +32,41 @@ class CentrobillProvider extends AbstractProvider
         return true;
     }
 
-    public function ccGetToken($data)
+    public function ccGetInfo(Request $request)
     {
-        $client = new Client();
-        $payload = [
-            'number' => $data['card_number'],
-            'expirationYear' => $data['expiration_year'],
-            'expirationMonth' => $data['expiration_month'],
-            'cvv' => $data['cvv'],
-            'cardHolder' => $data['card_holder'],
-        ];
-
         try {
-            $response = $client->request('POST', $url . '/tokenize', [
+            $client = new Client();
+
+            $response = $client->request('POST', $this->url . '/payment', [
                 'headers' => [
                     'Authorization' => $this->config['service']['api_key']
                 ],
-                'json' => $payload
+                'json' => [
+                    'paymentSource' => [
+                        'type' => 'token',
+                        'value' => $request['token'],
+                    ],
+                    'sku' => [
+                        'title' => 'Initial Payment',
+                        'siteId' => $this->config['service']['site_id'],
+                        'price' => [
+                            [
+                                'offset' => '0d',
+                                'amount' => 1,
+                                'currency' => config('misc.payment.currency.code'),
+                                'repeat' => false
+                            ]
+                        ],
+                    ],
+                    'consumer' => [
+                        'ip' => $request->ip()
+                    ]
+                ]
             ]);
-            $json = json_decode($response->getBody());
-            return ['token' => $json['token'], 'expire' => $json['expireAt']];
+
+            die($response->getBody());
         } catch (\Exception $ex) {
+            die($ex->getMessage());
             Log::error($ex->getMessage());
         }
     }

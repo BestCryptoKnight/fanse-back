@@ -188,38 +188,12 @@ class PaymentController extends Controller
 
     public function methodStore(Request $request)
     {
-        $this->validate($request, [
-            'card_number' => [
-                'required',
-                new CardNumber
-            ],
-            'card_holder' => [
-                'required',
-            ],
-            'expiration_month' => [
-                'required',
-                new CardExpirationMonth($request->input('expiration_year'))
-            ],
-            'expiration_year' => [
-                'required',
-                new CardExpirationMonth($request->input('expiration_month'))
-            ],
-            'cvc' => [
-                'required',
-                new CardCvc($$request->input('card_number'))
-            ]
-        ]);
-
         $driver = PaymentGateway::getCCDriver();
         if (!$driver) {
             abort(500, 'CC Driver is not set.');
         }
 
-        $token = $driver->ccGetToken($request->only(['card_number', 'card_holder', 'expiration_month', 'expiration_year', 'cvc']));
-        $info = [
-            'token' => $token,
-            'title' => '****' . substr($request['card_number'], -4),
-        ];
+        $info = $driver->ccGetInfo($request);
 
         $user = auth()->user();
         $m = $user->paymentMethods()->create([
