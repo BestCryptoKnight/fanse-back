@@ -28,7 +28,12 @@ class PaymentController extends Controller
         $drivers = PaymentGateway::getEnabledDrivers();
         $dd = [];
         foreach ($drivers as $d) {
-            $dd[] = ['id' => $d->getId(), 'name' => $d->getName()];
+            if (!$d->isCC()) {
+                $dd[] = ['id' => $d->getId(), 'name' => $d->getName()];
+            }
+        }
+        if (PaymentGateway::getCCDriver()) {
+            $dd[] = ['id' => 'cc', 'name' => ''];
         }
         return response()->json(['gateways' => $dd]);
     }

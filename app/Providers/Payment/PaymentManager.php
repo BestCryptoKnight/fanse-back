@@ -16,6 +16,7 @@ use InvalidArgumentException;
 class PaymentManager extends Manager
 {
     protected $config = [];
+    private $available = ['paypal', 'centrobill'];
 
     protected function createPaypalDriver()
     {
@@ -52,9 +53,8 @@ class PaymentManager extends Manager
 
     public function getEnabledDrivers()
     {
-        $available = ['paypal', 'centrobill'];
         $enabled = [];
-        foreach ($available as $a) {
+        foreach ($this->available as $a) {
             //try {
             $driver = $this->driver($a);
             if ($driver->isEnabled()) {
@@ -69,8 +69,7 @@ class PaymentManager extends Manager
 
     public function getCCDriver()
     {
-        $available = ['paypal', 'centrobill'];
-        foreach ($available as $a) {
+        foreach ($this->available as $a) {
             $driver = $this->driver($a);
             if ($driver->isEnabled() && $driver->isCC()) {
                 return $driver;
