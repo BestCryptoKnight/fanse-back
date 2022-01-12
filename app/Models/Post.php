@@ -44,14 +44,14 @@ class Post extends Model
             })
             ->where(function ($q) use ($now) {
                 $q->whereNull('expires')
-                    ->orWhereRaw('DATE_ADD(GREATEST(created_at, schedule), INTERVAL expires DAY) > ?', [$now]);
+                    ->orWhereRaw('DATE_ADD(IF(schedule IS NULL, created_at, schedule), INTERVAL expires DAY) > ?', [$now]);
             });
     }
 
     public function scopeExpired($query)
     {
         $now = Carbon::now('UTC');
-        return $query->whereNotNull('expires')->whereRaw('DATE_ADD(GREATEST(created_at, schedule), INTERVAL expires DAY) < ?', [$now]);
+        return $query->whereNotNull('expires')->whereRaw('DATE_ADD(IF(schedule IS NULL, created_at, schedule), INTERVAL expires DAY) < ?', [$now]);
     }
 
     public function scopeScheduled($query)
