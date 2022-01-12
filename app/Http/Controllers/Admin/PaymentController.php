@@ -62,7 +62,6 @@ class PaymentController extends Controller
 
     public function destroy(Payment $payment)
     {
-        abort(403);
         $payment->delete();
         return response()->json(['status' => true]);
     }

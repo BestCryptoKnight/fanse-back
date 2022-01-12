@@ -99,7 +99,6 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        abort(403);
         $user->delete();
     }
 
