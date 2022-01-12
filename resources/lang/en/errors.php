@@ -11,4 +11,5 @@ return [
     'incorrect-amount' => 'Incorrect amount.',
     'pending-withdrawal' => 'There is another pending withdrawal request.',
     'no-payout-method-found' => 'No payout method found.',
+    'payment-method-error' => 'Error adding payment method. Please try again later.',
 ];

@@ -175,7 +175,7 @@ class User extends Authenticatable
 
     public function paymentMethods()
     {
-        return $this->hasMany(PaymentMethod::class);
+        return $this->hasMany(PaymentMethod::class)->orderBy('main', 'desc');
     }
 
     public function verification()
@@ -183,7 +183,7 @@ class User extends Authenticatable
         return $this->hasOne(Verification::class);
     }
 
-    public function getMainPaymentMethod()
+    public function getMainPaymentMethodAttribute()
     {
         return $this->paymentMethods()->where('main', true)->first();
     }

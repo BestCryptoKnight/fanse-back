@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 use Log;
 
+use function PHPSTORM_META\map;
+
 class CentrobillProvider extends AbstractProvider
 {
     private $url = 'https://api.centrobill.com';
@@ -32,7 +34,7 @@ class CentrobillProvider extends AbstractProvider
         return true;
     }
 
-    public function ccGetInfo(Request $request)
+    public function ccGetInfo(Request $request, User $user)
     {
         try {
             $client = new Client();
@@ -45,6 +47,7 @@ class CentrobillProvider extends AbstractProvider
                     'paymentSource' => [
                         'type' => 'token',
                         'value' => $request['token'],
+                        '3ds' => false
                     ],
                     'sku' => [
                         'title' => 'Initial Payment',
@@ -52,23 +55,69 @@ class CentrobillProvider extends AbstractProvider
                         'price' => [
                             [
                                 'offset' => '0d',
-                                'amount' => 1,
+                                'amount' => 1.00,
                                 'currency' => config('misc.payment.currency.code'),
                                 'repeat' => false
                             ]
                         ],
                     ],
                     'consumer' => [
-                        'ip' => $request->ip()
+                        'ip' => config('app.debug') ? '178.140.173.99' : $request->ip(),
+                        'email' => $user->email,
+                        'externalId' => strlen($user->id . '') < 3 ? '00' . $user->id : $user->id
                     ]
                 ]
             ]);
 
-            die($response->getBody());
+            $json = json_decode($response->getBody(), true);
+            if ($this->ccVerify($json)) {
+                $profile = [
+                    'consumer' => [
+                        'id' => $json['consumer']['id']
+                    ]
+                ];
+                $this->ccRefund($json['payment']);
+                return $profile;
+            }
+            return null;
         } catch (\Exception $ex) {
-            die($ex->getMessage());
             Log::error($ex->getMessage());
         }
+    }
+
+    public function ccRefund(array $data)
+    {
+        try {
+            $client = new Client();
+
+            $response = $client->request('POST', $this->url . '/payment/' . $data['transactionId'] . '/credit', [
+                'headers' => [
+                    'Authorization' => $this->config['service']['api_key']
+                ],
+                'json' => [
+                    'amount' => 1.00,
+                    'reason' => 'Initial Payment Refund'
+                ]
+            ]);
+
+            $json = json_decode($response->getBody(), true);
+            if ($this->ccVerify($json)) {
+                if ($json['payment']['mode'] == 'refund') {
+                    return true;
+                }
+            }
+
+            return false;
+        } catch (\Exception $ex) {
+            Log::error($ex->getMessage());
+        }
+    }
+
+    private function ccVerify($data)
+    {
+        return $data['payment']['code'] == 0
+            && (config('app.debug') || $data['payment']['mode'] != 'test')
+            && $data['payment']['status'] == 'success';
     }
 
     public function buy(PaymentModel $paymentModel)

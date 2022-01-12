@@ -17,6 +17,7 @@ class CreatePaymentMethodsTable extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->tinyInteger('type')->unsigned();
+            $table->string('title')->nullable();
             $table->json('info');
             $table->tinyInteger('main')->unsigned()->default(0);
             $table->timestamps();

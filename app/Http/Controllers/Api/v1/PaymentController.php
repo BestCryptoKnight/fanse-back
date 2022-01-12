@@ -186,6 +186,27 @@ class PaymentController extends Controller
         ], 422);
     }
 
+    public function methodIndex()
+    {
+        return response()->json(['methods' => auth()->user()->paymentMethods]);
+    }
+
+    public function methodMain(PaymentMethod $paymentMethod)
+    {
+        $this->authorize('update', $paymentMethod);
+        $user = auth()->user();
+
+        foreach ($user->paymentMethods as $p) {
+            $p->main = $p->id == $paymentMethod->id;
+            $p->save();
+        }
+
+        $user->refresh();
+        $user->load('paymentMethods');
+
+        return response()->json(['methods' => $user->paymentMethods]);
+    }
+
     public function methodStore(Request $request)
     {
         $driver = PaymentGateway::getCCDriver();
@@ -193,11 +214,21 @@ class PaymentController extends Controller
             abort(500, 'CC Driver is not set.');
         }
 
-        $info = $driver->ccGetInfo($request);
-
         $user = auth()->user();
+
+        $info = $driver->ccGetInfo($request, $user);
+        if (!$info) {
+            return response()->json([
+                'message' => '',
+                'errors' => [
+                    '_' => [__('errors.payment-method-error')]
+                ]
+            ], 422);
+        }
+
         $m = $user->paymentMethods()->create([
             'info' => $info,
+            'title' => $request->input('title'),
             'type' => PaymentMethod::TYPE_CARD,
         ]);
         if (!$user->mainPaymentMethod) {
@@ -207,5 +238,23 @@ class PaymentController extends Controller
 
         $m->refresh();
         return response()->json($m);
+    }
+
+    public function methodDestroy(PaymentMethod $paymentMethod)
+    {
+        $this->authorize('delete', $paymentMethod);
+        $paymentMethod->delete();
+        $user = auth()->user();
+        if (!$user->mainPaymentMethod) {
+            $next = $user->paymentMethods()->first();
+            if ($next) {
+                $next->main = true;
+                $next->save();
+            }
+        }
+        $user->refresh();
+        $user->load('paymentMethods');
+
+        return response()->json(['methods' => auth()->user()->paymentMethods]);
     }
 }

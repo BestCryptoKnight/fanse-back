@@ -9,7 +9,9 @@ class PaymentMethod extends Model
 {
     const TYPE_CARD = 0;
 
-    protected $fillable = ['type', 'info', 'main'];
+    protected $fillable = ['type', 'info', 'main', 'title'];
+
+    protected $visible = ['id', 'type', 'main', 'title'];
 
     protected $casts = [
         'info' => 'array',
