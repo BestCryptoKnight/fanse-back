@@ -36,6 +36,11 @@ class PaymentManager extends Manager
         );
     }
 
+    protected function createCcDriver()
+    {
+        return $this->getCCDriver();
+    }
+
     public function buildProvider($provider, $config)
     {
         $config = [
@@ -55,14 +60,10 @@ class PaymentManager extends Manager
     {
         $enabled = [];
         foreach ($this->available as $a) {
-            //try {
             $driver = $this->driver($a);
             if ($driver->isEnabled()) {
                 $enabled[] = $driver;
             }
-            //} catch (\Exception $e) {
-            // do nothing
-            //}
         }
         return $enabled;
     }

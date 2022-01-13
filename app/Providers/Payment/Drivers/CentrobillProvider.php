@@ -4,6 +4,7 @@ namespace App\Providers\Payment\Drivers;
 
 use App\Models\Bundle;
 use App\Models\Payment as PaymentModel;
+use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
@@ -11,13 +12,9 @@ use Illuminate\Http\Request;
 
 use Log;
 
-use function PHPSTORM_META\map;
-
 class CentrobillProvider extends AbstractProvider
 {
     private $url = 'https://api.centrobill.com';
-
-    protected $name = 'CentroBill';
 
     public function getName()
     {
@@ -34,7 +31,7 @@ class CentrobillProvider extends AbstractProvider
         return true;
     }
 
-    public function ccGetInfo(Request $request, User $user)
+    public function attach(Request $request, User $user)
     {
         try {
             $client = new Client();
@@ -120,10 +117,29 @@ class CentrobillProvider extends AbstractProvider
             && $data['payment']['status'] == 'success';
     }
 
-    public function buy(PaymentModel $paymentModel)
+    public function buy(Request $request, PaymentModel $paymentModel)
     {
         $client = new Client();
+
+        $source = ['3ds' => false];
+        $consumer = [
+            'ip' => config('app.debug') ? '178.140.173.99' : $request->ip()
+        ];
+
+        if ($paymentModel->user->mainPaymentMethod) {
+            $source['type'] = 'consumer';
+            $source['value'] = $paymentModel->user->mainPaymentMethod->info['consumer']['id'];
+            $consumer['id'] = $paymentModel->user->mainPaymentMethod->info['consumer']['id'];
+        } else {
+            $source['type'] = 'token';
+            $source['value'] = $request['token'];
+            $consumer['email'] = $paymentModel->user->email;
+            $consumer['externalId'] = strlen($paymentModel->user->id . '') < 3
+                ? '00' . $paymentModel->user->id : $paymentModel->user->id;
+        }
+
         $payload = [
+            'paymentSource' => $source,
             'sku' => [
                 'title' => $paymentModel->type == PaymentModel::TYPE_POST ? __('app.unlock-post') : __('app.unlock-message'),
                 'siteId' => $this->config['service']['site_id'],
@@ -135,34 +151,59 @@ class CentrobillProvider extends AbstractProvider
                         'repeat' => false
                     ]
                 ],
-                'url' => [
-                    'redirectUrl' => $this->config['app']['app_url'] . '/payment/success/centrobill',
-                    'ipnUrl' => url('/process/centrobill')
-                ]
             ],
             'metadata' => [
                 'hash' => $paymentModel->hash
-            ]
+            ],
+            'consumer' => $consumer
         ];
 
         try {
-            $response = $client->request('POST', 'https://api.centrobill.com/paymentPage', [
+            $response = $client->request('POST', $this->url . '/payment', [
                 'headers' => [
                     'Authorization' => $this->config['service']['api_key']
                 ],
                 'json' => $payload
             ]);
-            $json = json_decode($response->getBody());
-            return ['redirect' => $json['url']];
+            $json = json_decode($response->getBody(), true);
+            if ($this->ccVerify($json)) {
+                $paymentModel->status = PaymentModel::STATUS_COMPLETE;
+                $paymentModel->token = $json['payment']['transactionId'];
+                $paymentModel->save();
+                return [
+                    'info' => [
+                        'consumer' => ['id' => $json['consumer']['id']]
+                    ]
+                ];
+            }
         } catch (\Exception $ex) {
             Log::error($ex->getMessage());
         }
     }
 
-    function subscribe(PaymentModel $paymentModel, User $user, Bundle $bundle = null)
+    function subscribe(Request $request, PaymentModel $paymentModel, User $user, Bundle $bundle = null)
     {
         $client = new Client();
+
+        $source = ['3ds' => false];
+        $consumer = [
+            'ip' => config('app.debug') ? '178.140.173.99' : $request->ip()
+        ];
+
+        if ($paymentModel->user->mainPaymentMethod) {
+            $source['type'] = 'consumer';
+            $source['value'] = $paymentModel->user->mainPaymentMethod->info['consumer']['id'];
+            $consumer['id'] = $paymentModel->user->mainPaymentMethod->info['consumer']['id'];
+        } else {
+            $source['type'] = 'token';
+            $source['value'] = $request['token'];
+            $consumer['email'] = $paymentModel->user->email;
+            $consumer['externalId'] = strlen($paymentModel->user->id . '') < 3
+                ? '00' . $paymentModel->user->id : $paymentModel->user->id;
+        }
+
         $payload = [
+            'paymentSource' => $source,
             'sku' => [
                 'title' => __('app.subscription-to-x', [
                     'site' => config('app.name'),
@@ -172,71 +213,112 @@ class CentrobillProvider extends AbstractProvider
                 'siteId' => $this->config['service']['site_id'],
                 'price' => [
                     [
-                        'offset' => ($bundle ? $bundle->months : 1) . 'm',
+                        'offset' => '0d',
+                        'amount' => $paymentModel->amount / 100,
+                        'currency' => config('misc.payment.currency.code'),
+                        'repeat' => false
+                    ],
+                    [
+                        'offset' => ($bundle ? $bundle->months : 1) * 30 . 'd',
                         'amount' => $paymentModel->amount / 100,
                         'currency' => config('misc.payment.currency.code'),
                         'repeat' => true
                     ]
                 ],
                 'url' => [
-                    'redirectUrl' => $this->config['app']['app_url'] . '/payment/success/centrobill',
-                    'ipnUrl' => url('/process/centrobill')
+                    'ipnUrl' => 'https://api.bitfan.uniprogy.com/latest/log', // url('/process/centrobill')
                 ]
             ],
+            'consumer' => $consumer,
             'metadata' => [
                 'hash' => $paymentModel->hash
             ]
         ];
 
         try {
-            $response = $client->request('POST', 'https://api.centrobill.com/paymentPage', [
+            $response = $client->request('POST', $this->url . '/payment', [
                 'headers' => [
                     'Authorization' => $this->config['service']['api_key']
                 ],
                 'json' => $payload
             ]);
-            $json = json_decode($response->getBody());
-            return ['redirect' => $json['url']];
+            $json = json_decode($response->getBody(), true);
+            if ($this->ccVerify($json)) {
+                $paymentModel->status = PaymentModel::STATUS_COMPLETE;
+                $paymentModel->token = $json['subscription']['id'];
+                $paymentModel->save();
+
+                return [
+                    'info' => [
+                        'consumer' => ['id' => $json['consumer']['id']]
+                    ]
+                ];
+            }
         } catch (\Exception $ex) {
             Log::error($ex->getMessage());
         }
     }
 
-    public function validate(Request $request)
+    public function unsubscribe(Subscription $subscription)
     {
-        if (isset($request['metadata']['hash'])) {
-            $payment = PaymentModel::where('hash', $request['metadata']['hash'])->first();
-            if ($payment) {
-                switch ($payment->type) {
-                    case PaymentModel::TYPE_MESSAGE:
-                    case PaymentModel::TYPE_POST:
-                    case PaymentModel::TYPE_SUBSCRIPTION_NEW:
-                        return $this->validatePayment($request, $payment);
-                    case PaymentModel::TYPE_SUBSCRIPTION_RENEW:
-                        return $this->validateRenewSubscription($request, $payment);
-                }
+        $client = new Client();
+        try {
+            $response = $client->request('PUT', $this->url . '/subscription/' . $subscription->token . '/cancel', [
+                'headers' => [
+                    'Authorization' => $this->config['service']['api_key']
+                ]
+            ]);
+            $json = json_decode($response->getBody(), true);
+            if ($json['status'] == 'canceled') {
+                return true;
             }
+        } catch (\Exception $ex) {
+            Log::error($ex->getMessage());
         }
         return false;
     }
 
-    private function validatePayment(Request $request, PaymentModel $paymentModel)
+    public function validate(Request $request)
     {
-        try {
-            if ($request['payment']['code'] * 1 == 0 && $request['payment']['mode'] == 'sale' && $request['payment']['status'] == 'success') {
-                $paymentModel->status = PaymentModel::STATUS_COMPLETE;
-                $paymentModel->token = $request['payment']['transactionId'];
-                $paymentModel->save();
-                return $paymentModel;
+        if ($this->ccVerify($request)) {
+            if (isset($request['subscription']['cycle']) && $request['subscription']['cycle'] > 0) {
+                return $this->validateRenewSubscription($request);
             }
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
         }
         return false;
     }
 
     private function validateRenewSubscription(Request $request)
     {
+        try {
+            $existing = PaymentModel::where(
+                'hash',
+                $request['metadata']['hash']
+                    . '..'
+                    . $request['subscription']['cycle']
+            )->first();
+            if ($existing) {
+                return $existing;
+            }
+            $firstPaymentModel = PaymentModel::where('hash', $request['metadata']['hash'])->first();
+            if ($firstPaymentModel) {
+                $info = $firstPaymentModel->info;
+                $info['expire'] = $request['subscription']['renewalDate'];
+                $newPaymentModel = Payment::create([
+                    'hash' => $firstPaymentModel->hash . '..' . $request['subscription']['cycle'],
+                    'user_id' => $firstPaymentModel->user_id,
+                    'type' => PaymentModel::TYPE_SUBSCRIPTION_RENEW,
+                    'info' => $info,
+                    'amount' => $firstPaymentModel->amount,
+                    'gateway' => $this->getId(),
+                    'token' => $request['subscription']['id'],
+                    'status' => PaymentModel::STATUS_COMPLETE,
+                ]);
+                return $newPaymentModel;
+            }
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+        }
         return false;
     }
 }
