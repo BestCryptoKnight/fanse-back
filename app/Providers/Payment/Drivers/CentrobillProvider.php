@@ -226,7 +226,7 @@ class CentrobillProvider extends AbstractProvider
                     ]
                 ],
                 'url' => [
-                    'ipnUrl' => 'https://api.bitfan.uniprogy.com/latest/log', // url('/process/centrobill')
+                    'ipnUrl' => url('/latest/process/centrobill')
                 ]
             ],
             'consumer' => $consumer,

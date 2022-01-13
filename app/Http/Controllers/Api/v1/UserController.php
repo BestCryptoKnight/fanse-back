@@ -78,4 +78,9 @@ class UserController extends Controller
         $sub->delete();
         return response()->json(['status' => false]);
     }
+
+    public function dolog()
+    {
+        return;
+    }
 }
