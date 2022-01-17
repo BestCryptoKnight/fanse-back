@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1;
 use App\Http\Controllers\Controller;
 use App\Models\CustomList;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ListController extends Controller
@@ -38,9 +39,16 @@ class ListController extends Controller
         $lists = [];
 
         // recent
+        $recent = User::where('id', '<>', $user->id)->whereIn('id', function ($q) use ($user) {
+            $q->select('user_id')->from('messages')->where('created_at', '>', Carbon::now('UTC')->subDay(7))->where('mass', 0)->whereIn('id', function ($q) use ($user) {
+                $q->select('message_id')->from('message_user')->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)->orWhere('party_id', $user->id);
+                });
+            });
+        })->count();
         $lists[] = [
             'id' => CustomList::DEFAULT_RECENT,
-            'listees_count' => 5
+            'listees_count' => $recent
         ];
 
         // fans

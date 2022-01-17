@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Api\v1;
 
 use App\Events\MessageEvent;
 use App\Http\Controllers\Controller;
+use App\Jobs\MassMessageJob;
+use App\Jobs\MessageJob;
+use App\Models\CustomList;
 use App\Models\Message;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Log;
 use DB;
@@ -58,12 +62,50 @@ class MessageController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+    public function storeMass(Request $request)
+    {
+        $this->validate($request, [
+            'message' => 'required|max:191',
+            'media' => 'nullable|array|max:' . config('misc.post.media.max'),
+            'price' => 'nullable|integer',
+            'include' => 'array',
+            'exclude' => 'nullable|array',
+            'include.*' => 'integer',
+            'exclude.*' => 'integer',
+        ]);
+
+        $user = auth()->user();
+
+        $price = $request->input('price') * 100;
+
+        $message = $user->messages()->create([
+            'message' => $request['message'],
+            'price' => $price,
+            'mass' => true
+        ]);
+
+        $media = $request->input('media');
+        if ($media) {
+            $media = collect($media)->pluck('screenshot', 'id');
+            $models = $current->media()->whereIn('id', $media->keys())->get();
+            foreach ($models as $model) {
+                $model->publish();
+                if (isset($media[$model->id])) {
+                    $info = $model->info;
+                    $info['screenshot'] = $media[$model->id];
+                    $model->info = $info;
+                    $model->save();
+                }
+            }
+            $message->media()->sync($media->keys());
+        }
+
+        MassMessageJob::dispatchAfterResponse($user, $message, $request['include'], $request->input('exclude', []));
+
+        $message->refresh()->load('media');
+        return response()->json($message);
+    }
+
     public function store(User $user, Request $request)
     {
         $current = auth()->user();
@@ -97,12 +139,7 @@ class MessageController extends Controller
             $message->media()->sync($media->keys());
         }
 
-        // mailbox
-        $current->mailbox()->attach($message, ['party_id' => $user->id]);
-        $user->mailbox()->attach($message, ['party_id' => $current->id]);
-
-        // notify
-        MessageEvent::dispatch($user, $message);
+        MessageJob::dispatchAfterResponse($message, $current, $user);
 
         $message->refresh()->load('media');
         return response()->json($message);

@@ -76,8 +76,8 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::post('lists/{user}/{list_id}', 'ListController@add');
     Route::get('lists', 'ListController@index');
     Route::get('lists/user/{user}', 'ListController@indexUser');
-    Route::get('lists/{id}', 'ListController@indexList');
     Route::get('lists/message', 'ListController@indexMessage');
+    Route::get('lists/{id}', 'ListController@indexList');
 
     // users
     Route::get('users/{username}', 'UserController@show');
@@ -89,6 +89,7 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::post('subscribe/{user}', 'UserController@subscribe');
 
     // messages
+    Route::post('messages', 'MessageController@storeMass');
     Route::post('messages/{user}', 'MessageController@store');
     Route::get('messages/{user}', 'MessageController@indexChat');
     Route::get('messages', 'MessageController@index');

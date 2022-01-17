@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Message extends Model
 {
-    protected $fillable = ['message', 'price'];
+    protected $fillable = ['message', 'price', 'mass'];
 
     protected $visible = [
         'id', 'message', 'media', 'created_at', 'user', 'party', 'read', 'has_access', 'price'
@@ -16,6 +16,10 @@ class Message extends Model
     protected $with = ['accessed'];
 
     protected $appends = ['has_access', 'read'];
+
+    protected $casts = [
+        'mass' => 'boolean'
+    ];
 
     public function user()
     {
