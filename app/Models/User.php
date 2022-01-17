@@ -153,6 +153,16 @@ class User extends Authenticatable
         return $this->subscribers()->where('user_id', $user ? $user->id : null);
     }
 
+    public function following()
+    {
+        return $this->belongsToMany(User::class, 'subscriptions', 'user_id', 'sub_id');
+    }
+
+    public function followers()
+    {
+        return $this->belongsToMany(User::class, 'subscriptions', 'sub_id', 'user_id');
+    }
+
     public function payments()
     {
         return $this->hasMany(Payment::class);

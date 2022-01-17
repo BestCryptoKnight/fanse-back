@@ -20,6 +20,49 @@ class ListController extends Controller
         $lists->map(function ($model) {
             $model->append('listees_count');
         });
+
+        $lists = $lists->toArray();
+        $lists[] = [
+            'id' => CustomList::DEFAULT_FOLLOWING,
+            'listees_count' => $user->subscriptions()->count()
+        ];
+
+        return response()->json([
+            'lists' => $lists
+        ]);
+    }
+
+    public function indexMessage()
+    {
+        $user = auth()->user();
+        $lists = [];
+
+        // recent
+        $lists[] = [
+            'id' => CustomList::DEFAULT_RECENT,
+            'listees_count' => 5
+        ];
+
+        // fans
+        $lists[] = [
+            'id' => CustomList::DEFAULT_FANS,
+            'listees_count' => $user->followers()->count()
+        ];
+
+        // following
+        $lists[] = [
+            'id' => CustomList::DEFAULT_FOLLOWING,
+            'listees_count' => $user->following()->count()
+        ];
+
+        // custom
+        $custom = $user->lists()->with('user')->get();
+        $custom->map(function ($model) {
+            $model->append('listees_count');
+        });
+
+        $lists = array_merge($lists, $custom->toArray());
+
         return response()->json([
             'lists' => $lists
         ]);
@@ -48,8 +91,20 @@ class ListController extends Controller
 
     public function indexList(int $id)
     {
-        $list = $id >= 1000 ? CustomList::findOrFail($id) : CustomList::bookmarks(auth()->user());
-        $users = auth()->user()->listees()->whereJsonContains('list_ids', $id)->paginate(config('misc.page.size'));
+        $list = ['id' => $id];
+
+        $user = auth()->user();
+
+        switch ($id) {
+            case 1:
+                $query = $user->following();
+                break;
+            default:
+                $query = $user->listees()->whereJsonContains('list_ids', $id);
+                break;
+        }
+
+        $users = $query->paginate(config('misc.page.size'));
         return response()->json([
             'list' => $list,
             'users' => $users

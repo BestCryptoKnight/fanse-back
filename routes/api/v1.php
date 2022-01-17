@@ -77,6 +77,7 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::get('lists', 'ListController@index');
     Route::get('lists/user/{user}', 'ListController@indexUser');
     Route::get('lists/{id}', 'ListController@indexList');
+    Route::get('lists/message', 'ListController@indexMessage');
 
     // users
     Route::get('users/{username}', 'UserController@show');

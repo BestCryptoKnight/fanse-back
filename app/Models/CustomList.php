@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class CustomList extends Model
 {
+    const DEFAULT_BOOKMARKS = 0;
+    const DEFAULT_FANS = 1;
+    const DEFAULT_FOLLOWING = 2;
+    const DEFAULT_RECENT = 3;
+
     protected $fillable = ['title', 'id', 'user_id'];
 
     protected $visible = [
@@ -25,7 +30,7 @@ class CustomList extends Model
     public static function bookmarks(User $user)
     {
         return new self([
-            'id' => 0,
+            'id' => self::DEFAULT_BOOKMARKS,
             'user_id' => $user->id,
         ]);
     }
