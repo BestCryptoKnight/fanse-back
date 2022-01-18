@@ -268,7 +268,7 @@ class PaymentController extends Controller
 
         $user = auth()->user();
 
-        $info = $driver->ccGetInfo($request, $user);
+        $info = $driver->attach($request, $user);
         if (!$info) {
             return response()->json([
                 'message' => '',
