@@ -33,7 +33,16 @@ class MessageController extends Controller
             $item->append(['party', 'read']);
         });
 
-        return response()->json(['chats' => $chats]);
+        // is there a running or recent mass messaging campaign
+        $mass = $user
+            ->messages()
+            ->where('mass', true)
+            ->where('created_at', '>', Carbon::now('UTC')->subMinutes(5))
+            ->orderBy('created_at', 'desc')
+            ->first();
+        $mass->append(['recipients_count'])->makeVisible(['recipients_count']);
+
+        return response()->json(['chats' => $chats, 'mass' => $mass]);
     }
 
     public function indexChat(User $user)
@@ -87,7 +96,7 @@ class MessageController extends Controller
         $media = $request->input('media');
         if ($media) {
             $media = collect($media)->pluck('screenshot', 'id');
-            $models = $current->media()->whereIn('id', $media->keys())->get();
+            $models = $user->media()->whereIn('id', $media->keys())->get();
             foreach ($models as $model) {
                 $model->publish();
                 if (isset($media[$model->id])) {
