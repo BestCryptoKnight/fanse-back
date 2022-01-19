@@ -104,7 +104,7 @@ class ListController extends Controller
         $user = auth()->user();
 
         switch ($id) {
-            case 1:
+            case CustomList::DEFAULT_FOLLOWING:
                 $query = $user->following();
                 break;
             default:
