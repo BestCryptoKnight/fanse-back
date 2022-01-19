@@ -4,6 +4,7 @@ namespace App\Providers\Payment\Drivers;
 
 use App\Models\Bundle;
 use App\Models\Payment as PaymentModel;
+use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -37,8 +38,6 @@ class PaypalProvider extends AbstractProvider
 {
     protected $api;
 
-    protected $name = 'PayPal';
-
     public function getName()
     {
         return 'PayPal';
@@ -47,6 +46,11 @@ class PaypalProvider extends AbstractProvider
     public function getId()
     {
         return 'paypal';
+    }
+
+    public function isCC()
+    {
+        return false;
     }
 
     public function getApi()
@@ -63,7 +67,12 @@ class PaypalProvider extends AbstractProvider
         return $this->api;
     }
 
-    public function buy(PaymentModel $paymentModel)
+    public function attach(Request $request, User $user)
+    {
+        return [];
+    }
+
+    public function buy(Request $request, PaymentModel $paymentModel)
     {
         $payer = new Payer();
         $payer->setPaymentMethod('paypal');
@@ -94,7 +103,7 @@ class PaypalProvider extends AbstractProvider
         }
     }
 
-    function subscribe(PaymentModel $paymentModel, User $user, Bundle $bundle = null)
+    function subscribe(Request $request, PaymentModel $paymentModel, User $user, Bundle $bundle = null)
     {
         $plan = new Plan();
 
@@ -161,9 +170,14 @@ class PaypalProvider extends AbstractProvider
             $agreement = $agreement->create($this->getApi());
 
             return ['redirect' => $agreement->getApprovalLink()];
-        } catch (\Exception $ex) {
-            die(print_r($ex->getData()));
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
         }
+    }
+
+    public function unsubscribe(Subscription $subscription)
+    {
+        return true;
     }
 
     public function validate(Request $request)

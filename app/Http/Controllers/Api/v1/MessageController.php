@@ -2,9 +2,15 @@
 
 namespace App\Http\Controllers\Api\v1;
 
+use App\Events\MessageEvent;
+use App\Events\MessageReadEvent;
 use App\Http\Controllers\Controller;
+use App\Jobs\MassMessageJob;
+use App\Jobs\MessageJob;
+use App\Models\CustomList;
 use App\Models\Message;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Log;
 use DB;
@@ -28,7 +34,18 @@ class MessageController extends Controller
             $item->append(['party', 'read']);
         });
 
-        return response()->json(['chats' => $chats]);
+        // is there a running or recent mass messaging campaign
+        $mass = $user
+            ->messages()
+            ->where('mass', true)
+            ->where('created_at', '>', Carbon::now('UTC')->subMinutes(5))
+            ->orderBy('created_at', 'desc')
+            ->first();
+        if ($mass) {
+            $mass->append(['recipients_count'])->makeVisible(['recipients_count']);
+        }
+
+        return response()->json(['chats' => $chats, 'mass' => $mass]);
     }
 
     public function indexChat(User $user)
@@ -49,6 +66,7 @@ class MessageController extends Controller
             })->update([
                 'read' => 1
             ]);
+            MessageReadEvent::dispatch($user, $current);
         }
 
         return response()->json([
@@ -57,12 +75,50 @@ class MessageController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+    public function storeMass(Request $request)
+    {
+        $this->validate($request, [
+            'message' => 'required|max:191',
+            'media' => 'nullable|array|max:' . config('misc.post.media.max'),
+            'price' => 'nullable|integer',
+            'include' => 'array',
+            'exclude' => 'nullable|array',
+            'include.*' => 'integer',
+            'exclude.*' => 'integer',
+        ]);
+
+        $user = auth()->user();
+
+        $price = $request->input('price') * 100;
+
+        $message = $user->messages()->create([
+            'message' => $request['message'],
+            'price' => $price,
+            'mass' => true
+        ]);
+
+        $media = $request->input('media');
+        if ($media) {
+            $media = collect($media)->pluck('screenshot', 'id');
+            $models = $user->media()->whereIn('id', $media->keys())->get();
+            foreach ($models as $model) {
+                $model->publish();
+                if (isset($media[$model->id])) {
+                    $info = $model->info;
+                    $info['screenshot'] = $media[$model->id];
+                    $model->info = $info;
+                    $model->save();
+                }
+            }
+            $message->media()->sync($media->keys());
+        }
+
+        MassMessageJob::dispatchAfterResponse($user, $message, $request['include'], $request->input('exclude', []));
+
+        $message->refresh()->load('media');
+        return response()->json($message);
+    }
+
     public function store(User $user, Request $request)
     {
         $current = auth()->user();
@@ -96,9 +152,7 @@ class MessageController extends Controller
             $message->media()->sync($media->keys());
         }
 
-        // mailbox
-        $current->mailbox()->attach($message, ['party_id' => $user->id]);
-        $user->mailbox()->attach($message, ['party_id' => $current->id]);
+        MessageJob::dispatchAfterResponse($message, $current, $user);
 
         $message->refresh()->load('media');
         return response()->json($message);

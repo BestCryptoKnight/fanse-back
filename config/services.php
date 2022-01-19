@@ -36,6 +36,12 @@ return [
         'secret' => env('PAYPAL_SECRET', ''),
     ],
 
+    'centrobill' => [
+        'enabled' => true,
+        'site_id' => env('CENTROBILL_SITE_ID', ''),
+        'api_key' => env('CENTROBILL_API_KEY', ''),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

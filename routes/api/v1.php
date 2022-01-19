@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,10 +22,11 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::post('process/{gateway}', 'PaymentController@process');
-Route::get('gateways', 'PaymentController@gateways');
+
+Broadcast::routes(['middleware' => ['auth:sanctum', 'abilities:user']]);
 
 // dummy function
-// Route::post('log', 'UserController@dolog');
+Route::post('log', 'UserController@dolog');
 
 // user
 Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
@@ -73,6 +75,7 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::post('lists/{user}/{list_id}', 'ListController@add');
     Route::get('lists', 'ListController@index');
     Route::get('lists/user/{user}', 'ListController@indexUser');
+    Route::get('lists/message', 'ListController@indexMessage');
     Route::get('lists/{id}', 'ListController@indexList');
 
     // users
@@ -85,18 +88,24 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::post('subscribe/{user}', 'UserController@subscribe');
 
     // messages
+    Route::post('messages', 'MessageController@storeMass');
     Route::post('messages/{user}', 'MessageController@store');
     Route::get('messages/{user}', 'MessageController@indexChat');
     Route::get('messages', 'MessageController@index');
     Route::delete('messages/{user}', 'MessageController@destroy');
 
     // payments
+    Route::get('gateways', 'PaymentController@gateways');
     Route::post('price', 'PaymentController@price');
     Route::post('price/bundle', 'PaymentController@bundleStore');
     Route::put('price/bundle/{bundle}', 'PaymentController@bundleUpdate');
     Route::delete('price/bundle/{bundle}', 'PaymentController@bundleDestroy');
     Route::post('payments', 'PaymentController@store');
     Route::get('payments', 'PaymentController@index');
+    Route::get('payments/method', 'PaymentController@methodIndex');
+    Route::post('payments/method', 'PaymentController@methodStore');
+    Route::put('payments/method/{payment_method}', 'PaymentController@methodMain');
+    Route::delete('payments/method/{payment_method}', 'PaymentController@methodDestroy');
 
     // notifications
     Route::get('notifications', 'NotificationController@index');

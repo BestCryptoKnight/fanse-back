@@ -18,6 +18,7 @@ class CreateMessagesTable extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->text('message');
             $table->bigInteger('price')->unsigned()->nullable();
+            $table->tinyInteger('mass')->unsigned()->default(0);
             $table->timestamps();
         });
     }
