@@ -37,6 +37,13 @@ class MessageReadEvent implements ShouldBroadcast
 
     public function broadcastWith()
     {
-        return ['id' => $this->user->id];
+        $this->recipient->loadCount(['notificationsNew', 'mailboxNew']);
+        return [
+            'id' => $this->user->id,
+            'updates' => [
+                'notifications' => $this->recipient->notifications_new_count,
+                'messages' => $this->recipient->mailbox_new_count
+            ]
+        ];
     }
 }

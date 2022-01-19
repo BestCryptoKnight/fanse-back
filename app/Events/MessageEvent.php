@@ -16,12 +16,11 @@ class MessageEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $message;
+    private $message;
     private $user;
 
     public function __construct(User $user, Message $message)
     {
-        $message->load('user');
         $this->user = $user;
         $this->message = $message;
     }
@@ -34,5 +33,19 @@ class MessageEvent implements ShouldBroadcast
     public function broadcastAs()
     {
         return 'message';
+    }
+
+    public function broadcastWith()
+    {
+        $this->user->loadCount(['notificationsNew', 'mailboxNew']);
+        $this->message->load('user');
+
+        return [
+            'message' => $this->message,
+            'updates' => [
+                'notifications' => $this->user->notifications_new_count,
+                'messages' => $this->user->mailbox_new_count
+            ]
+        ];
     }
 }
