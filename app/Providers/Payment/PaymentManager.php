@@ -6,6 +6,7 @@ use App\Models\Message;
 use App\Models\Payment;
 use App\Models\Post;
 use App\Models\User;
+use App\Providers\Payment\Drivers\CentrobillProvider;
 use App\Providers\Payment\Drivers\PaypalProvider;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
@@ -15,6 +16,7 @@ use InvalidArgumentException;
 class PaymentManager extends Manager
 {
     protected $config = [];
+    private $available = ['paypal', 'centrobill'];
 
     protected function createPaypalDriver()
     {
@@ -23,6 +25,20 @@ class PaymentManager extends Manager
             PaypalProvider::class,
             $config
         );
+    }
+
+    protected function createCentrobillDriver()
+    {
+        $config = $this->container->make('config')['services.centrobill'];
+        return $this->buildProvider(
+            CentrobillProvider::class,
+            $config
+        );
+    }
+
+    protected function createCcDriver()
+    {
+        return $this->getCCDriver();
     }
 
     public function buildProvider($provider, $config)
@@ -42,19 +58,25 @@ class PaymentManager extends Manager
 
     public function getEnabledDrivers()
     {
-        $available = ['paypal'];
         $enabled = [];
-        foreach ($available as $a) {
-            //try {
+        foreach ($this->available as $a) {
             $driver = $this->driver($a);
             if ($driver->isEnabled()) {
                 $enabled[] = $driver;
             }
-            //} catch (\Exception $e) {
-            // do nothing
-            //}
         }
         return $enabled;
+    }
+
+    public function getCCDriver()
+    {
+        foreach ($this->available as $a) {
+            $driver = $this->driver($a);
+            if ($driver->isEnabled() && $driver->isCC()) {
+                return $driver;
+            }
+        }
+        return null;
     }
 
     public function processPayment(Payment $payment)

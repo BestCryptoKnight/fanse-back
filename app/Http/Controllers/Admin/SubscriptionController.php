@@ -52,6 +52,7 @@ class SubscriptionController extends Controller
 
     public function destroy(Subscription $subscription)
     {
+        abort(403);
         $subscription->forceDelete();
     }
 }

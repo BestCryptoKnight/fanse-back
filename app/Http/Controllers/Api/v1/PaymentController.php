@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Bundle;
 use App\Models\Message;
 use App\Models\Payment;
+use App\Models\PaymentMethod;
 use App\Models\Post;
 use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
+use CreatePaymentMethodsTable;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Payment as PaymentGateway;
@@ -27,9 +29,14 @@ class PaymentController extends Controller
         $drivers = PaymentGateway::getEnabledDrivers();
         $dd = [];
         foreach ($drivers as $d) {
-            $dd[] = ['id' => $d->getId(), 'name' => $d->getName()];
+            if (!$d->isCC()) {
+                $dd[] = ['id' => $d->getId(), 'name' => $d->getName()];
+            }
         }
-        return response()->json(['gateways' => $dd]);
+        if (PaymentGateway::getCCDriver()) {
+            $dd[] = ['id' => 'cc', 'name' => ''];
+        }
+        return response()->json(['gateways' => $dd, 'method' => auth()->user()->mainPaymentMethod]);
     }
 
     public function price(Request $request)
@@ -89,14 +96,17 @@ class PaymentController extends Controller
         $drivers = PaymentGateway::getEnabledDrivers();
         $gateways = [];
         foreach ($drivers as $d) {
-            $gateways[] = $d->getId();
+            if (!$d->isCC()) {
+                $gateways[] = $d->getId();
+            }
+        }
+        if (PaymentGateway::getCCDriver()) {
+            $gateways[] = 'cc';
         }
 
-        $this->validate($request, [
-            'gateway' => [
-                'required',
-                Rule::in($gateways),
-            ],
+        $user = auth()->user();
+
+        $rules = [
             'type' => [
                 'required',
                 Rule::in([
@@ -107,9 +117,16 @@ class PaymentController extends Controller
             'message_id' => 'required_if:type,' . Payment::TYPE_MESSAGE . '|exists:messages,id',
             'sub_id' => 'required_if:type,' . Payment::TYPE_SUBSCRIPTION_NEW . '|exists:users,id',
             'bundle_id' => 'nullable|exists:bundles,id',
-        ]);
+        ];
+        if (!$user->mainPaymentMethod) {
+            $rules['gateway'] = [
+                'required',
+                Rule::in($gateways),
+            ];
+        }
 
-        $user = auth()->user();
+        $this->validate($request, $rules);
+
         $amount = 0;
         $bundle = null;
         $info = [];
@@ -149,7 +166,11 @@ class PaymentController extends Controller
                 break;
         }
 
-        $gateway = PaymentGateway::driver($request['gateway']);
+        if ($user->mainPaymentMethod) {
+            $gateway = PaymentGateway::getCCDriver();
+        } else {
+            $gateway = PaymentGateway::driver($request['gateway']);
+        }
 
         $payment = $user->payments()->create([
             'type' => $request['type'],
@@ -160,8 +181,35 @@ class PaymentController extends Controller
         ]);
 
         $response = $request['type'] == Payment::TYPE_SUBSCRIPTION_NEW
-            ? $gateway->subscribe($payment, $sub, $bundle)
-            : $gateway->buy($payment);
+            ? $gateway->subscribe($request, $payment, $sub, $bundle)
+            : $gateway->buy($request, $payment);
+
+        if (!$response) {
+            return response()->json([
+                'message' => '',
+                'errors' => [
+                    '_' => [__('errors.order-can-not-be-processed')]
+                ]
+            ], 422);
+        }
+
+        if (isset($response['info'])) {
+            if ($request['title']) {
+                $m = $user->paymentMethods()->where([
+                    'type' => PaymentMethod::TYPE_CARD,
+                    'title' => $request['title']
+                ])->first();
+                if (!$m) {
+                    $m = $user->paymentMethods()->create([
+                        'type' => PaymentMethod::TYPE_CARD,
+                        'title' => $request['title'],
+                        'info' => $response['info'],
+                        'main' => $user->mainPaymentMethod ? false : true
+                    ]);
+                }
+            }
+            return $this->doProcess($payment);
+        }
 
         return response()->json($response);
     }
@@ -170,11 +218,16 @@ class PaymentController extends Controller
     {
         $gateway = PaymentGateway::driver($gateway);
         $payment = $gateway->validate($request);
-        if ($payment) {
-            $response = PaymentGateway::processPayment($payment);
+        return $this->doProcess($payment);
+    }
+
+    private function doProcess($validated)
+    {
+        if ($validated) {
+            $response = PaymentGateway::processPayment($validated);
             $response['status'] = true;
-            $payment->status = Payment::STATUS_COMPLETE;
-            $payment->save();
+            $validated->status = Payment::STATUS_COMPLETE;
+            $validated->save();
             return response()->json($response);
         }
         return response()->json([
@@ -183,5 +236,77 @@ class PaymentController extends Controller
                 '_' => [__('errors.order-can-not-be-processed')]
             ]
         ], 422);
+    }
+
+    public function methodIndex()
+    {
+        return response()->json(['methods' => auth()->user()->paymentMethods]);
+    }
+
+    public function methodMain(PaymentMethod $paymentMethod)
+    {
+        $this->authorize('update', $paymentMethod);
+        $user = auth()->user();
+
+        foreach ($user->paymentMethods as $p) {
+            $p->main = $p->id == $paymentMethod->id;
+            $p->save();
+        }
+
+        $user->refresh();
+        $user->load('paymentMethods');
+
+        return response()->json(['methods' => $user->paymentMethods]);
+    }
+
+    public function methodStore(Request $request)
+    {
+        $driver = PaymentGateway::getCCDriver();
+        if (!$driver) {
+            abort(500, 'CC Driver is not set.');
+        }
+
+        $user = auth()->user();
+
+        $info = $driver->attach($request, $user);
+        if (!$info) {
+            return response()->json([
+                'message' => '',
+                'errors' => [
+                    '_' => [__('errors.payment-method-error')]
+                ]
+            ], 422);
+        }
+
+        $m = $user->paymentMethods()->create([
+            'info' => $info,
+            'title' => $request->input('title'),
+            'type' => PaymentMethod::TYPE_CARD,
+        ]);
+        if (!$user->mainPaymentMethod) {
+            $m->main = true;
+            $m->save();
+        }
+
+        $m->refresh();
+        return response()->json($m);
+    }
+
+    public function methodDestroy(PaymentMethod $paymentMethod)
+    {
+        $this->authorize('delete', $paymentMethod);
+        $paymentMethod->delete();
+        $user = auth()->user();
+        if (!$user->mainPaymentMethod) {
+            $next = $user->paymentMethods()->first();
+            if ($next) {
+                $next->main = true;
+                $next->save();
+            }
+        }
+        $user->refresh();
+        $user->load('paymentMethods');
+
+        return response()->json(['methods' => auth()->user()->paymentMethods]);
     }
 }

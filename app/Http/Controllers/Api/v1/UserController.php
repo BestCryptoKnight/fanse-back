@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\v1;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Payment as PaymentGateway;
+use Log;
 
 class UserController extends Controller
 {
@@ -59,9 +61,15 @@ class UserController extends Controller
 
     public function subscriptionDestroy(User $user)
     {
-        $sub = auth()->user()->subscriptions()->with('sub', function ($q) use ($user) {
+        $sub = auth()->user()->subscriptions()->whereHas('sub', function ($q) use ($user) {
             $q->where('id', $user->id);
         })->firstOrFail();
+
+        if ($sub->active && $sub->gateway) {
+            $gateway = PaymentGateway::driver($sub->gateway);
+            $gateway->unsubscribe($sub);
+        }
+
         if ($sub->expires) {
             $sub->active = false;
             $sub->save();
@@ -69,5 +77,10 @@ class UserController extends Controller
         }
         $sub->delete();
         return response()->json(['status' => false]);
+    }
+
+    public function dolog()
+    {
+        return;
     }
 }

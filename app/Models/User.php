@@ -183,9 +183,19 @@ class User extends Authenticatable
         return $this->hasOne(PayoutMethod::class);
     }
 
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class)->orderBy('main', 'desc');
+    }
+
     public function verification()
     {
         return $this->hasOne(Verification::class);
+    }
+
+    public function getMainPaymentMethodAttribute()
+    {
+        return $this->paymentMethods()->where('main', true)->first();
     }
 
     public function getWithdrawAttribute()

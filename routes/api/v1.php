@@ -22,12 +22,11 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::post('process/{gateway}', 'PaymentController@process');
-Route::get('gateways', 'PaymentController@gateways');
 
 Broadcast::routes(['middleware' => ['auth:sanctum', 'abilities:user']]);
 
 // dummy function
-// Route::post('log', 'UserController@dolog');
+Route::post('log', 'UserController@dolog');
 
 // user
 Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
@@ -96,12 +95,17 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::delete('messages/{user}', 'MessageController@destroy');
 
     // payments
+    Route::get('gateways', 'PaymentController@gateways');
     Route::post('price', 'PaymentController@price');
     Route::post('price/bundle', 'PaymentController@bundleStore');
     Route::put('price/bundle/{bundle}', 'PaymentController@bundleUpdate');
     Route::delete('price/bundle/{bundle}', 'PaymentController@bundleDestroy');
     Route::post('payments', 'PaymentController@store');
     Route::get('payments', 'PaymentController@index');
+    Route::get('payments/method', 'PaymentController@methodIndex');
+    Route::post('payments/method', 'PaymentController@methodStore');
+    Route::put('payments/method/{payment_method}', 'PaymentController@methodMain');
+    Route::delete('payments/method/{payment_method}', 'PaymentController@methodDestroy');
 
     // notifications
     Route::get('notifications', 'NotificationController@index');
