@@ -17,7 +17,7 @@ class AdminSeeder extends Seeder
     public function run()
     {
         $email = 'admin@localhost';
-        User::create([
+        $user = User::create([
             'email' => $email,
             'name' => 'Admin',
             'username' => 'admin',
@@ -26,6 +26,22 @@ class AdminSeeder extends Seeder
             'channel_type' => User::CHANNEL_EMAIL,
             'email_verified_at' => Carbon::now(),
             'role' => User::ROLE_ADMIN
+        ]);
+        $user->verification()->create([
+            'country' => 'US',
+            'info' => [
+                'first_name' => 'Admin',
+                'last_name' => 'Account',
+                'address' => '7744 Columbia St',
+                'city' => 'New York',
+                'state' => 'NY',
+                'zip' => '10128'
+            ],
+            'status' => Verification::STATUS_APPROVED
+        ]);
+        $user->payoutMethod()->create([
+            'type' => PayoutMethod::TYPE_PAYPAL,
+            'info' => ['paypal' => $email]
         ]);
     }
 }
