@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v1;
 
 use App\Events\MessageEvent;
+use App\Events\MessageReadEvent;
 use App\Http\Controllers\Controller;
 use App\Jobs\MassMessageJob;
 use App\Jobs\MessageJob;
@@ -40,7 +41,9 @@ class MessageController extends Controller
             ->where('created_at', '>', Carbon::now('UTC')->subMinutes(5))
             ->orderBy('created_at', 'desc')
             ->first();
-        $mass->append(['recipients_count'])->makeVisible(['recipients_count']);
+        if ($mass) {
+            $mass->append(['recipients_count'])->makeVisible(['recipients_count']);
+        }
 
         return response()->json(['chats' => $chats, 'mass' => $mass]);
     }
@@ -63,6 +66,7 @@ class MessageController extends Controller
             })->update([
                 'read' => 1
             ]);
+            MessageReadEvent::dispatch($user, $current);
         }
 
         return response()->json([
