@@ -77,6 +77,8 @@ class MessageController extends Controller
 
     public function storeMass(Request $request)
     {
+        $this->authorize('mass', Message::class);
+
         $this->validate($request, [
             'message' => 'required|max:191',
             'media' => 'nullable|array|max:' . config('misc.post.media.max'),
