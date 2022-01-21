@@ -15,6 +15,7 @@ class Payment extends Model
     const TYPE_SUBSCRIPTION_RENEW = 1;
     const TYPE_POST = 10;
     const TYPE_MESSAGE = 11;
+    const TYPE_TIP = 20;
 
     const STATUS_PENDING = 0;
     const STATUS_COMPLETE = 1;

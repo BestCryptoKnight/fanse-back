@@ -138,10 +138,23 @@ class CentrobillProvider extends AbstractProvider
                 ? '00' . $paymentModel->user->id : $paymentModel->user->id;
         }
 
+        $title = '';
+        switch ($paymentModel->type) {
+            case PaymentModel::TYPE_MESSAGE:
+                $title = __('app.unlock-message');
+                break;
+            case PaymentModel::TYPE_POST:
+                $title = __('app.unlock-post');
+                break;
+            case PaymentModel::TYPE_TIP:
+                $title = __('app.tip');
+                break;
+        }
+
         $payload = [
             'paymentSource' => $source,
             'sku' => [
-                'title' => $paymentModel->type == PaymentModel::TYPE_POST ? __('app.unlock-post') : __('app.unlock-message'),
+                'title' => $title,
                 'siteId' => $this->config['service']['site_id'],
                 'price' => [
                     [

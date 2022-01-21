@@ -124,6 +124,9 @@ class PaymentManager extends Manager
                 $message->access()->attach($payment->user->id);
                 $response['message'] = $message;
                 break;
+            case Payment::TYPE_TIP:
+                $message = $payment->user->messages()->create(['message' => $request['message']]);
+                break;
         }
         return $response;
     }
