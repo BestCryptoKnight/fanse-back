@@ -1,9 +1,5 @@
 <?php
 
-use App\PointHistory;
-use App\Program;
-use App\Subscription;
-
 return [
 
     'tz' => 'Europe/Moscow',
@@ -67,11 +63,11 @@ return [
             ]
         ],
         'avatar' => [
-            'maxsize' => '20000',
+            'maxsize' => 20000,
             'resize' => '1080x1080',
         ],
         'cover' => [
-            'maxsize' => '20000',
+            'maxsize' => 20000,
             'resize' => '1920x1080',
         ],
     ],
