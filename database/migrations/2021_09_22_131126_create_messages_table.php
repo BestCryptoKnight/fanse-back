@@ -16,9 +16,11 @@ class CreateMessagesTable extends Migration
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->tinyInteger('type')->unsigned()->default(0);
             $table->text('message');
             $table->bigInteger('price')->unsigned()->nullable();
             $table->tinyInteger('mass')->unsigned()->default(0);
+            $table->json('info')->nullable();
             $table->timestamps();
         });
     }

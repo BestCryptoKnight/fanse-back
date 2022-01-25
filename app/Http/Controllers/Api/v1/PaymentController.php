@@ -167,9 +167,12 @@ class PaymentController extends Controller
                 $amount = $message->price;
                 break;
             case Payment::TYPE_TIP:
-                $info['message'] = $request->input('message');
+                $info['message'] = $request->input('message', '');
+                if ($request->input('post_id')) {
+                    $info['post_id'] = $request['post_id'];
+                }
                 $amount = $request['amount'] * 100;
-                $to = User::findOrFail($info['to_id']);
+                $to = $request['to_id'];
                 break;
         }
 

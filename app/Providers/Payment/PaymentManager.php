@@ -2,6 +2,7 @@
 
 namespace App\Providers\Payment;
 
+use App\Jobs\MessageJob;
 use App\Models\Message;
 use App\Models\Payment;
 use App\Models\Post;
@@ -125,7 +126,13 @@ class PaymentManager extends Manager
                 $response['message'] = $message;
                 break;
             case Payment::TYPE_TIP:
-                $message = $payment->user->messages()->create(['message' => $request['message']]);
+                $message = $payment->user->messages()->create([
+                    'message' => $payment->info['message'],
+                    'type' => Message::TYPE_TIP,
+                    'info' => ['payment_id' => $payment->id]
+                ]);
+                MessageJob::dispatchAfterResponse($message, $payment->user, $payment->to);
+                $response['tip'] = true;
                 break;
         }
         return $response;

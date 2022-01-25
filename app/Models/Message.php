@@ -8,18 +8,22 @@ use DB;
 
 class Message extends Model
 {
-    protected $fillable = ['message', 'price', 'mass'];
+    const TYPE_MESSAGE = 0;
+    const TYPE_TIP = 1;
+
+    protected $fillable = ['message', 'price', 'mass', 'type', 'info'];
 
     protected $visible = [
-        'id', 'message', 'media', 'created_at', 'user', 'party', 'read', 'has_access', 'price'
+        'id', 'message', 'media', 'created_at', 'user', 'party', 'read', 'has_access', 'price', 'type', 'items'
     ];
 
     protected $with = ['accessed'];
 
-    protected $appends = ['has_access', 'read'];
+    protected $appends = ['has_access', 'read', 'items'];
 
     protected $casts = [
-        'mass' => 'boolean'
+        'mass' => 'boolean',
+        'info' => 'array'
     ];
 
     public function user()
@@ -91,5 +95,20 @@ class Message extends Model
             ->where('message_id', $this->id)
             ->where('user_id', '<>', $this->user_id)
             ->count();
+    }
+
+    public function getItemsAttribute()
+    {
+        $items = [];
+        if ($this->info) {
+            foreach ($this->info as $k => $v) {
+                switch ($k) {
+                    case 'payment_id':
+                        $items['payment'] = Payment::find($v);
+                        break;
+                }
+            }
+        }
+        return $items;
     }
 }
