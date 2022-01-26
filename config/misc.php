@@ -18,7 +18,7 @@ return [
     ],
 
     'media' => [
-        'mimes' => 'jpg,png,heic,mp4,avi,mov,m4a,ogg',
+        'mimes' => 'jpg,png,mp4,mov',
         'maxsize' => 100000, // 100 mb
     ],
 
