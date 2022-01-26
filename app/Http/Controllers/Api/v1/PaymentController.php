@@ -110,12 +110,14 @@ class PaymentController extends Controller
             'type' => [
                 'required',
                 Rule::in([
-                    Payment::TYPE_SUBSCRIPTION_NEW, Payment::TYPE_POST, Payment::TYPE_MESSAGE
+                    Payment::TYPE_SUBSCRIPTION_NEW, Payment::TYPE_POST, Payment::TYPE_MESSAGE, Payment::TYPE_TIP
                 ]),
             ],
             'post_id' => 'required_if:type,' . Payment::TYPE_POST . '|exists:posts,id',
             'message_id' => 'required_if:type,' . Payment::TYPE_MESSAGE . '|exists:messages,id',
             'sub_id' => 'required_if:type,' . Payment::TYPE_SUBSCRIPTION_NEW . '|exists:users,id',
+            'to_id' => 'required_if:type,' . Payment::TYPE_TIP . '|exists:users,id',
+            'amount' => 'required_if:type,' . Payment::TYPE_TIP,
             'bundle_id' => 'nullable|exists:bundles,id',
         ];
         if (!$user->mainPaymentMethod) {
@@ -163,6 +165,14 @@ class PaymentController extends Controller
                 }
                 $to = $message->user_id;
                 $amount = $message->price;
+                break;
+            case Payment::TYPE_TIP:
+                $info['message'] = $request->input('message', '');
+                if ($request->input('post_id')) {
+                    $info['post_id'] = $request['post_id'];
+                }
+                $amount = $request['amount'] * 100;
+                $to = $request['to_id'];
                 break;
         }
 

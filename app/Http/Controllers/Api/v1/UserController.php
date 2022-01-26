@@ -13,9 +13,11 @@ class UserController extends Controller
     public function suggestions()
     {
         $user = auth()->user();
-        $users = User::where('id', '<>', $user->id)->whereDoesntHave('subscribers', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })->take(30)->get();
+        $users = User::where('id', '<>', $user->id)
+            ->where('role', '<>', User::ROLE_ADMIN)
+            ->whereDoesntHave('subscribers', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->take(30)->get();
         return response()->json([
             'users' => $users
         ]);

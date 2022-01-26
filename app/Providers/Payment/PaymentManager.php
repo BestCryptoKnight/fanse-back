@@ -2,6 +2,7 @@
 
 namespace App\Providers\Payment;
 
+use App\Jobs\MessageJob;
 use App\Models\Message;
 use App\Models\Payment;
 use App\Models\Post;
@@ -105,6 +106,7 @@ class PaymentManager extends Manager
                         'info' => $info
                     ]);
                 }
+                $sub->refresh();
                 $response['user'] = $sub;
                 break;
             case Payment::TYPE_SUBSCRIPTION_RENEW:
@@ -117,12 +119,25 @@ class PaymentManager extends Manager
             case Payment::TYPE_POST:
                 $post = Post::findOrFail($payment->info['post_id']);
                 $post->access()->attach($payment->user->id);
+                $post->refresh()->load('media');
                 $response['post'] = $post;
                 break;
             case Payment::TYPE_MESSAGE:
                 $message = Message::with('user')->findOrFail($payment->info['message_id']);
                 $message->access()->attach($payment->user->id);
+                $message->refresh()->load('media');
                 $response['message'] = $message;
+                break;
+            case Payment::TYPE_TIP:
+                $message = $payment->user->messages()->create([
+                    'message' => $payment->info['message'],
+                    'type' => Message::TYPE_TIP,
+                    'info' => ['payment_id' => $payment->id]
+                ]);
+                MessageJob::dispatchAfterResponse($message, $payment->user, $payment->to);
+                $response['tip'] = [
+                    'to' => $payment->to
+                ];
                 break;
         }
         return $response;

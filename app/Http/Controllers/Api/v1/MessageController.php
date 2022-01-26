@@ -77,6 +77,8 @@ class MessageController extends Controller
 
     public function storeMass(Request $request)
     {
+        $this->authorize('mass', Message::class);
+
         $this->validate($request, [
             'message' => 'required|max:191',
             'media' => 'nullable|array|max:' . config('misc.post.media.max'),
@@ -93,7 +95,7 @@ class MessageController extends Controller
 
         $message = $user->messages()->create([
             'message' => $request['message'],
-            'price' => $price,
+            'price' => $price ? $price : null,
             'mass' => true
         ]);
 
@@ -133,7 +135,7 @@ class MessageController extends Controller
 
         $message = $current->messages()->create([
             'message' => $request['message'],
-            'price' => $price
+            'price' => $price ? $price : null
         ]);
 
         $media = $request->input('media');

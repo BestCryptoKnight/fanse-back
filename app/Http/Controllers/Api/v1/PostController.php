@@ -21,9 +21,14 @@ class PostController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::active()->orderByRaw('IF(schedule IS NULL,created_at,schedule) desc')->paginate(config('misc.page.size'));
+        $query = Post::active();
+        if ($request->input('q')) {
+            $query->where('message', 'like', '%' . $request['q'] . '%');
+        }
+
+        $posts = $query->orderByRaw('IF(schedule IS NULL,created_at,schedule) desc')->paginate(config('misc.page.size'));
         return response()->json($posts);
     }
 

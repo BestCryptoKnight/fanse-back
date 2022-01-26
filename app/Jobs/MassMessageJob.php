@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\MassMessageCompleteEvent;
 use App\Events\MessageEvent;
 use App\Models\CustomList;
 use App\Models\User;
@@ -115,5 +116,7 @@ class MassMessageJob implements ShouldQueue
             $rec->mailbox()->attach($this->message, ['party_id' => $this->user->id]);
             MessageEvent::dispatch($rec, $this->message);
         }
+
+        MassMessageCompleteEvent::dispatch($this->message);
     }
 }

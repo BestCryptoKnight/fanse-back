@@ -1,9 +1,5 @@
 <?php
 
-use App\PointHistory;
-use App\Program;
-use App\Subscription;
-
 return [
 
     'tz' => 'Europe/Moscow',
@@ -22,7 +18,7 @@ return [
     ],
 
     'media' => [
-        'mimes' => 'jpg,png,heic,mp4,avi,mov,m4a,ogg',
+        'mimes' => 'jpg,png,mp4,mov',
         'maxsize' => 100000, // 100 mb
     ],
 
@@ -67,11 +63,11 @@ return [
             ]
         ],
         'avatar' => [
-            'maxsize' => '20000',
+            'maxsize' => 20000,
             'resize' => '1080x1080',
         ],
         'cover' => [
-            'maxsize' => '20000',
+            'maxsize' => 20000,
             'resize' => '1920x1080',
         ],
     ],
