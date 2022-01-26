@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\PayoutMethod;
 use App\Models\User;
+use App\Models\Verification;
 use Illuminate\Database\Seeder;
 use Hash;
 use Illuminate\Support\Carbon;
