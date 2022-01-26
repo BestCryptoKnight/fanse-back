@@ -106,6 +106,7 @@ class PaymentManager extends Manager
                         'info' => $info
                     ]);
                 }
+                $sub->refresh();
                 $response['user'] = $sub;
                 break;
             case Payment::TYPE_SUBSCRIPTION_RENEW:
@@ -118,11 +119,13 @@ class PaymentManager extends Manager
             case Payment::TYPE_POST:
                 $post = Post::findOrFail($payment->info['post_id']);
                 $post->access()->attach($payment->user->id);
+                $post->refresh()->load('media');
                 $response['post'] = $post;
                 break;
             case Payment::TYPE_MESSAGE:
                 $message = Message::with('user')->findOrFail($payment->info['message_id']);
                 $message->access()->attach($payment->user->id);
+                $message->refresh()->load('media');
                 $response['message'] = $message;
                 break;
             case Payment::TYPE_TIP:
@@ -132,7 +135,9 @@ class PaymentManager extends Manager
                     'info' => ['payment_id' => $payment->id]
                 ]);
                 MessageJob::dispatchAfterResponse($message, $payment->user, $payment->to);
-                $response['tip'] = true;
+                $response['tip'] = [
+                    'to' => $payment->to
+                ];
                 break;
         }
         return $response;
