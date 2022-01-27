@@ -19,7 +19,7 @@ abstract class AbstractProvider
 
     public function isEnabled()
     {
-        return !isset($this->config['enabled']) || $this->config['enabled'];
+        return !isset($this->config['service']['enabled']) || $this->config['service']['enabled'];
     }
 
     abstract function isCC();
