@@ -42,7 +42,7 @@ class AdminSeeder extends Seeder
             'status' => Verification::STATUS_APPROVED
         ]);
         $user->payoutMethod()->create([
-            'type' => PayoutMethod::TYPE_PAYPAL,
+            'gateway' => 'paypal',
             'info' => ['paypal' => $email]
         ]);
     }

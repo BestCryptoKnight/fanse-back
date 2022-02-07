@@ -61,7 +61,13 @@ class BankProvider extends AbstractProvider
     public function export(Payout $payout, $handler)
     {
         fputcsv($handler, [
-            //$payout->info
+            $payout->user->verification->info['first_name'],
+            $payout->user->verification->info['last_name'],
+            $payout->info['info']['name'],
+            $payout->user->verification->country,
+            $payout->info['info']['address'],
+            $payout->info['info']['swift'],
+            $payout->info['info']['account'],
         ]);
     }
 }

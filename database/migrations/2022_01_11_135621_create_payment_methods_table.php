@@ -16,7 +16,7 @@ class CreatePaymentMethodsTable extends Migration
         Schema::create('payment_methods', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->tinyInteger('type')->unsigned();
+            $table->string('gateway');
             $table->string('title')->nullable();
             $table->json('info');
             $table->tinyInteger('main')->unsigned()->default(0);

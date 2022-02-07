@@ -9,23 +9,26 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Storage;
+use Payment as PaymentGateway;
 
 class PayoutController extends Controller
 {
-    public function index()
+    public function index($type = null)
     {
         $query = Payout::with('user.payoutMethod')->with('batches');
         switch ($type) {
-            case 'pending':
-                $query->where('status', Payout::STATUS_PENDING);
-                break;
             case 'complete':
-                $query->where('status', Payment::STATUS_COMPLETE);
+                $query->where('status', Payout::STATUS_COMPLETE);
                 break;
+            case 'pending':
             default:
+                $query->where('status', Payout::STATUS_PENDING);
                 break;
         }
         $payouts = $query->orderBy('created_at', 'asc')->paginate(config('misc.page.size'));
+        $payouts->map(function ($item) {
+            $item->append('batch');
+        });
         return response()->json($payouts);
     }
 
@@ -33,7 +36,7 @@ class PayoutController extends Controller
     {
         $this->validate($request, [
             'status' => [
-                'requried',
+                'required',
                 Rule::in(Payout::STATUS_COMPLETE, Payout::STATUS_PENDING)
             ]
         ]);
@@ -51,7 +54,7 @@ class PayoutController extends Controller
         return response()->json(['status' => true]);
     }
 
-    public function batchIndex()
+    public function batchIndex($type = null)
     {
         $query = PayoutBatch::withCount('payouts');
         switch ($type) {
@@ -59,7 +62,7 @@ class PayoutController extends Controller
                 $query->where('status', Payout::STATUS_PENDING);
                 break;
             case 'complete':
-                $query->where('status', Payment::STATUS_COMPLETE);
+                $query->where('status', Payout::STATUS_COMPLETE);
                 break;
             default:
                 break;
@@ -71,50 +74,61 @@ class PayoutController extends Controller
     public function batchStore()
     {
         $batch = PayoutBatch::create();
-        $payouts = Payout::pending()->get()->pluck('id');
-        $batch->sync($payouts);
+        $payouts = Payout::pending()->whereDoesntHave('batches')->get()->pluck('id');
+        $batch->payouts()->sync($payouts);
         $batch->refresh()->loadCount('payouts');
         return response()->json($batch);
     }
 
-    public function batchMark(Request $request, PayoutBatch $batch)
+    public function batchMark(Request $request, PayoutBatch $payoutBatch)
     {
         $this->validate($request, [
             'status' => [
-                'requried',
+                'required',
                 Rule::in(Payout::STATUS_COMPLETE, Payout::STATUS_PENDING)
             ]
         ]);
-        $batch->status = $request['status'];
-        $batch->processed_at = $batch->status == Payout::STATUS_COMPLETE ? Carbon::now('UTC') : null;
-        $batch->save();
 
-        $batch->refresh()->load('user.payoutMethod');
-        return response()->json($payout);
+        $now = Carbon::now('UTC');
+
+        $payoutBatch->status = $request['status'];
+        $payoutBatch->processed_at = $payoutBatch->status == Payout::STATUS_COMPLETE ? $now : null;
+        $payoutBatch->save();
+
+        foreach ($payoutBatch->payouts as $p) {
+            $p->status = $request['status'];
+            $p->processed_at = $payoutBatch->status == Payout::STATUS_COMPLETE ? $now : null;
+            $p->save();
+        }
+
+        $payoutBatch->refresh()->loadCount('payouts');
+        return response()->json($payoutBatch);
     }
 
-    public function batchDestroy(PayoutBatch $batch)
+    public function batchDestroy(PayoutBatch $payoutBatch)
     {
-        $batch->delete();
+        if ($payoutBatch->status == Payout::STATUS_PENDING) {
+            $payoutBatch->delete();
+        }
         return response()->json(['status' => true]);
     }
 
-    public function batchFile(PayoutBatch $batch)
+    public function batchFile(PayoutBatch $payoutBatch)
     {
         $files = [];
         $gateways = [];
-        foreach ($batch->payouts as $payout) {
-            $type = $payout->info['type'];
-            if (!in_array($type, $files)) {
-                $files[$type] = fopen(storage_path('app/tmp') . DIRECTORY_SEPARATOR . $type . '.csv', 'w');
+        foreach ($payoutBatch->payouts as $payout) {
+            $gateway = $payout->info['gateway'];
+            if (!in_array($gateway, $files)) {
+                $files[$gateway] = fopen(storage_path('app/tmp') . DIRECTORY_SEPARATOR . $gateway . '.csv', 'w');
             }
-            if (!in_array($type, $gateways)) {
-                $gateways[$type] = PaymentGateway::driver($type);
+            if (!in_array($gateway, $gateways)) {
+                $gateways[$gateway] = PaymentGateway::driver($gateway);
             }
-            $gateways[$type]->export($payout, $files[$type]);
+            $gateways[$gateway]->export($payout, $files[$gateway]);
         }
 
-        $zfile = storage_path('app/tmp') . DIRECTORY_SEPARATOR  . 'payouts-batch-' . $batch->hash . '.zip';
+        $zfile = storage_path('app/tmp') . DIRECTORY_SEPARATOR  . 'payouts-batch-' . $payoutBatch->hash . '.zip';
         $zip = new \ZipArchive();
         $zip->open($zfile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
 

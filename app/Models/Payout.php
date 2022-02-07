@@ -13,7 +13,7 @@ class Payout extends Model
     const STATUS_COMPLETE = 1;
 
     protected $fillable = ['amount', 'status', 'info'];
-    protected $visible = ['amount', 'status', 'info', 'id', 'created_at', 'updated_at'];
+    protected $visible = ['amount', 'status', 'info', 'id', 'created_at', 'updated_at', 'processed_at', 'batch'];
     protected $casts = ['info' => 'array'];
     protected $dates = ['processed_at'];
 
@@ -34,19 +34,11 @@ class Payout extends Model
 
     public function batches()
     {
-        return $this->belongsToMany(PayoutBatch::class);
+        return $this->belongsToMany(PayoutBatch::class, 'batch_payout', 'payout_id', 'batch_id');
     }
 
     public function getBatchAttribute()
     {
         return count($this->batches) ? $this->batches[0] : null;
-    }
-
-    public function getProcessedAtAttribute($value)
-    {
-        if ($this->batch) {
-            return $this->batch->processed_at;
-        }
-        return $value;
     }
 }

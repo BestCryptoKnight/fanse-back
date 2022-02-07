@@ -99,24 +99,30 @@ class PayoutController extends Controller
 
     public function methodStore(Request $request)
     {
+        $drivers = PaymentGateway::getPayoutDrivers();
+        $gateways = [];
+        foreach ($drivers as $d) {
+            $gateways[] = $d->getId();
+        }
+
         $this->validate($request, [
-            'type' => [
+            'gateway' => [
                 'required',
-                Rule::in([PayoutMethod::TYPE_BANK, PayoutMethod::TYPE_PAYPAL])
+                Rule::in($gateways)
             ],
-            'paypal' => 'required_if:type,' . PayoutMethod::TYPE_PAYPAL . '|email',
-            'address' => 'required_if:type,' . PayoutMethod::TYPE_BANK . '|string|max:500',
-            'name' => 'required_if:type,' . PayoutMethod::TYPE_BANK . '|string|max:100',
-            'swift' => 'required_if:type,' . PayoutMethod::TYPE_BANK . '|string|max:100',
-            'account' => 'required_if:type,' . PayoutMethod::TYPE_BANK . '|string|max:100',
+            'paypal' => 'required_if:gateway,paypal|email',
+            'address' => 'required_if:gateway,bank|string|max:500',
+            'name' => 'required_if:gateway,bank|string|max:100',
+            'swift' => 'required_if:gateway,bank|string|max:100',
+            'account' => 'required_if:gateway,bank|string|max:100',
         ]);
 
         $info = [];
-        switch ($request['type']) {
-            case PayoutMethod::TYPE_PAYPAL:
+        switch ($request['gateway']) {
+            case 'paypal':
                 $info['paypal'] = $request['paypal'];
                 break;
-            case PayoutMethod::TYPE_BANK:
+            case 'bank':
                 $info = $request->only(['address', 'name', 'swift', 'account']);
                 break;
         }
@@ -126,10 +132,8 @@ class PayoutController extends Controller
         if (!$method) {
             $method = new PayoutMethod(['user_id' => $user->id]);
         }
-        $method->fill([
-            'type' => $request['type'],
-            'info' => $info
-        ]);
+        $method->gateway = $request['gateway'];
+        $method->info = $info;
         $method->save();
 
         $method->refresh();
@@ -159,12 +163,10 @@ class PayoutController extends Controller
             'withdraw' => $user->withdraw
         ];
 
-        $drivers = PaymentGateway::getEnabledDrivers();
+        $drivers = PaymentGateway::getPayoutDrivers();
         $dd = [];
         foreach ($drivers as $d) {
-            if ($d->forPayout()) {
-                $dd[] = ['id' => $d->getId(), 'name' => $d->getName()];
-            }
+            $dd[] = ['id' => $d->getId(), 'name' => $d->getName()];
         }
 
         return response()->json([

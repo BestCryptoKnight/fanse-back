@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class PayoutBatch extends Model
 {
     protected $dates = ['processed_at'];
     protected $appends = ['amount'];
+    protected $visible = ['id', 'hash', 'amount', 'processed_at', 'created_at', 'payouts_count'];
 
     public static function boot()
     {
@@ -26,11 +28,11 @@ class PayoutBatch extends Model
 
     public function payouts()
     {
-        return $this->belongsToMany(Payout::class);
+        return $this->belongsToMany(Payout::class, 'batch_payout', 'batch_id');
     }
 
     public function getAmountAttribute()
     {
-        return $this->payouts()->sum('amount');
+        return $this->payouts()->sum('amount') * 1;
     }
 }

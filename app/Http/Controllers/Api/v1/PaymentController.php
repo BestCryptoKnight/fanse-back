@@ -26,10 +26,10 @@ class PaymentController extends Controller
 
     public function gateways()
     {
-        $drivers = PaymentGateway::getEnabledDrivers();
+        $drivers = PaymentGateway::getPaymentDrivers();
         $dd = [];
         foreach ($drivers as $d) {
-            if (!$d->isCC() && $d->forPayment()) {
+            if (!$d->isCC()) {
                 $dd[] = ['id' => $d->getId(), 'name' => $d->getName()];
             }
         }
@@ -93,7 +93,7 @@ class PaymentController extends Controller
 
     public function store(Request $request)
     {
-        $drivers = PaymentGateway::getEnabledDrivers();
+        $drivers = PaymentGateway::getPaymentDrivers();
         $gateways = [];
         foreach ($drivers as $d) {
             if (!$d->isCC()) {
@@ -206,12 +206,12 @@ class PaymentController extends Controller
         if (isset($response['info'])) {
             if ($request['title']) {
                 $m = $user->paymentMethods()->where([
-                    'type' => PaymentMethod::TYPE_CARD,
+                    'gateway' => 'cc',
                     'title' => $request['title']
                 ])->first();
                 if (!$m) {
                     $m = $user->paymentMethods()->create([
-                        'type' => PaymentMethod::TYPE_CARD,
+                        'gateway' => 'cc',
                         'title' => $request['title'],
                         'info' => $response['info'],
                         'main' => $user->mainPaymentMethod ? false : true
@@ -291,7 +291,7 @@ class PaymentController extends Controller
         $m = $user->paymentMethods()->create([
             'info' => $info,
             'title' => $request->input('title'),
-            'type' => PaymentMethod::TYPE_CARD,
+            'gateway' => 'cc'
         ]);
         if (!$user->mainPaymentMethod) {
             $m->main = true;

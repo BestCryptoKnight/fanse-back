@@ -90,6 +90,30 @@ class PaymentManager extends Manager
         return null;
     }
 
+    public function getPaymentDrivers()
+    {
+        $enabled = $this->getEnabledDrivers();
+        $dd = [];
+        foreach ($enabled as $d) {
+            if ($d->forPayment()) {
+                $dd[] = $d;
+            }
+        }
+        return $dd;
+    }
+
+    public function getPayoutDrivers()
+    {
+        $enabled = $this->getEnabledDrivers();
+        $dd = [];
+        foreach ($enabled as $d) {
+            if ($d->forPayout()) {
+                $dd[] = $d;
+            }
+        }
+        return $dd;
+    }
+
     public function processPayment(Payment $payment)
     {
         $response = [];

@@ -16,7 +16,7 @@ class CreatePayoutMethodsTable extends Migration
         Schema::create('payout_methods', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->tinyInteger('type')->unsigned();
+            $table->string('gateway');
             $table->json('info');
             $table->timestamps();
         });

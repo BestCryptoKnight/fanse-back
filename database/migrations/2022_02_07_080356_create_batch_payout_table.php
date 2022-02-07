@@ -15,7 +15,7 @@ class CreateBatchPayoutTable extends Migration
     {
         Schema::create('batch_payout', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('batch_id')->constrained()->onDelete('cascade');
+            $table->foreignId('batch_id')->constrained('payout_batches')->onDelete('cascade');
             $table->foreignId('payout_id')->constrained()->onDelete('cascade');
         });
     }

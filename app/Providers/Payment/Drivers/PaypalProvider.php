@@ -288,5 +288,10 @@ class PaypalProvider extends AbstractProvider
 
     public function export(Payout $payout, $handler)
     {
+        fputcsv($handler, [
+            $payout->info['info']['paypal'],
+            $payout->amount / 100,
+            config('misc.payment.currency.code')
+        ]);
     }
 }
