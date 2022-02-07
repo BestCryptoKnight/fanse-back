@@ -20,6 +20,7 @@ class Cors
         $response->headers->set('Access-Control-Allow-Origin', $origin);
         $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, X-Auth-Token, Origin, Authorization, Cache-Control, Accept, Bearer');
+        $response->headers->set('Access-Control-Expose-Headers', 'Content-Disposition');
 
         return $response;
     }

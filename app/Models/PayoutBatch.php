@@ -9,7 +9,7 @@ class PayoutBatch extends Model
 {
     protected $dates = ['processed_at'];
     protected $appends = ['amount'];
-    protected $visible = ['id', 'hash', 'amount', 'processed_at', 'created_at', 'payouts_count'];
+    protected $visible = ['id', 'hash', 'amount', 'processed_at', 'created_at', 'payouts_count', 'status'];
 
     public static function boot()
     {

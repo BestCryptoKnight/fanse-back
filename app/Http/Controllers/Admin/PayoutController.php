@@ -13,9 +13,15 @@ use Payment as PaymentGateway;
 
 class PayoutController extends Controller
 {
-    public function index($type = null)
+    public function index($type = null, Request $request)
     {
-        $query = Payout::with('user.payoutMethod')->with('batches');
+        $query = Payout::with('user.verification')->with('batches');
+        if ($request->input('q')) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('username', 'like', '%' . $request->input('q') . '%')
+                    ->orWhere('name', 'like', '%' . $request->input('q') . '%');
+            });
+        }
         switch ($type) {
             case 'complete':
                 $query->where('status', Payout::STATUS_COMPLETE);
@@ -54,20 +60,10 @@ class PayoutController extends Controller
         return response()->json(['status' => true]);
     }
 
-    public function batchIndex($type = null)
+    public function batchIndex()
     {
         $query = PayoutBatch::withCount('payouts');
-        switch ($type) {
-            case 'pending':
-                $query->where('status', Payout::STATUS_PENDING);
-                break;
-            case 'complete':
-                $query->where('status', Payout::STATUS_COMPLETE);
-                break;
-            default:
-                break;
-        }
-        $batches = $query->orderBy('created_at', 'asc')->paginate(config('misc.page.size'));
+        $batches = $query->orderBy('status', 'asc')->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
         return response()->json($batches);
     }
 
