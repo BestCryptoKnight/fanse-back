@@ -27,4 +27,12 @@ Route::middleware(['auth:sanctum', 'abilities:admin'])->group(function () {
     Route::delete('payments/{payment}', 'PaymentController@destroy');
 
     Route::get('stats', 'StatsController@index');
+
+    Route::get('payouts', 'PayoutController@index');
+    Route::put('payouts/{payout}', 'PayoutController@mark');
+    Route::delete('payouts/{payout}', 'PayoutController@destroy');
+
+    Route::get('payouts/batches', 'PayoutController@batchIndex');
+    Route::put('payouts/batches/{payout_batch}', 'PayoutController@batchMark');
+    Route::delete('payouts/batches/{payout_batch}', 'PayoutController@batchDestroy');
 });

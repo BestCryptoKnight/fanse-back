@@ -15,6 +15,7 @@ class Payout extends Model
     protected $fillable = ['amount', 'status', 'info'];
     protected $visible = ['amount', 'status', 'info', 'id', 'created_at', 'updated_at'];
     protected $casts = ['info' => 'array'];
+    protected $dates = ['processed_at'];
 
     public function user()
     {
@@ -29,5 +30,23 @@ class Payout extends Model
     public function scopePending($q)
     {
         $q->where('status', self::STATUS_PENDING);
+    }
+
+    public function batches()
+    {
+        return $this->belongsToMany(PayoutBatch::class);
+    }
+
+    public function getBatchAttribute()
+    {
+        return count($this->batches) ? $this->batches[0] : null;
+    }
+
+    public function getProcessedAtAttribute($value)
+    {
+        if ($this->batch) {
+            return $this->batch->processed_at;
+        }
+        return $value;
     }
 }

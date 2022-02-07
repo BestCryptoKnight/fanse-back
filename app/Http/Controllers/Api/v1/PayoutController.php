@@ -8,6 +8,7 @@ use App\Models\PayoutMethod;
 use App\Models\Verification;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Payment as PaymentGateway;
 
 class PayoutController extends Controller
 {
@@ -158,10 +159,19 @@ class PayoutController extends Controller
             'withdraw' => $user->withdraw
         ];
 
+        $drivers = PaymentGateway::getEnabledDrivers();
+        $dd = [];
+        foreach ($drivers as $d) {
+            if ($d->forPayout()) {
+                $dd[] = ['id' => $d->getId(), 'name' => $d->getName()];
+            }
+        }
+
         return response()->json([
             'method' => $user->payoutMethod,
             'stats' => $stats,
             'settings' => $settings,
+            'gateways' => $dd
         ]);
     }
 
