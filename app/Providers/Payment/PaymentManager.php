@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\Payment;
 use App\Models\Post;
 use App\Models\User;
+use App\Providers\Payment\Drivers\BankProvider;
 use App\Providers\Payment\Drivers\CentrobillProvider;
 use App\Providers\Payment\Drivers\PaypalProvider;
 use Carbon\Carbon;
@@ -17,7 +18,16 @@ use InvalidArgumentException;
 class PaymentManager extends Manager
 {
     protected $config = [];
-    private $available = ['paypal', 'centrobill'];
+    private $available = ['paypal', 'centrobill', 'bank'];
+
+    protected function createBankDriver()
+    {
+        $config = $this->container->make('config')['services.bank'];
+        return $this->buildProvider(
+            BankProvider::class,
+            $config
+        );
+    }
 
     protected function createPaypalDriver()
     {
@@ -78,6 +88,30 @@ class PaymentManager extends Manager
             }
         }
         return null;
+    }
+
+    public function getPaymentDrivers()
+    {
+        $enabled = $this->getEnabledDrivers();
+        $dd = [];
+        foreach ($enabled as $d) {
+            if ($d->forPayment()) {
+                $dd[] = $d;
+            }
+        }
+        return $dd;
+    }
+
+    public function getPayoutDrivers()
+    {
+        $enabled = $this->getEnabledDrivers();
+        $dd = [];
+        foreach ($enabled as $d) {
+            if ($d->forPayout()) {
+                $dd[] = $d;
+            }
+        }
+        return $dd;
     }
 
     public function processPayment(Payment $payment)

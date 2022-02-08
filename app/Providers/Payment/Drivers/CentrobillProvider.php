@@ -4,6 +4,7 @@ namespace App\Providers\Payment\Drivers;
 
 use App\Models\Bundle;
 use App\Models\Payment as PaymentModel;
+use App\Models\Payout;
 use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
@@ -29,6 +30,16 @@ class CentrobillProvider extends AbstractProvider
     public function isCC()
     {
         return true;
+    }
+
+    public function forPayment()
+    {
+        return true;
+    }
+
+    public function forPayout()
+    {
+        return false;
     }
 
     public function attach(Request $request, User $user)
@@ -333,5 +344,9 @@ class CentrobillProvider extends AbstractProvider
             Log::error($e->getMessage());
         }
         return false;
+    }
+
+    public function export(Payout $payout, $handler)
+    {
     }
 }

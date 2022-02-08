@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreatePayoutsTable extends Migration
+class CreatePayoutBatchesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,15 +13,12 @@ class CreatePayoutsTable extends Migration
      */
     public function up()
     {
-        Schema::create('payouts', function (Blueprint $table) {
+        Schema::create('payout_batches', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->bigInteger('amount')->unsigned();
-            $table->tinyInteger('status')->unsigned()->default(0);
-            $table->json('info');
+            $table->string('hash');
+            $table->tinyInteger('status')->default(0);
             $table->dateTime('processed_at')->nullable();
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 
@@ -32,6 +29,6 @@ class CreatePayoutsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('payouts');
+        Schema::dropIfExists('payout_batches');
     }
 }

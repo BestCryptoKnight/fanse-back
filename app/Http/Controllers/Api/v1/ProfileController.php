@@ -18,7 +18,7 @@ class ProfileController extends Controller
     public function image(string $type, Request $request)
     {
         $this->validate($request, [
-            'image' => 'nullable|image|max:' . config('misc.profile.image.maxsize')
+            'image' => 'nullable|image|max:' . config('misc.profile.' . $type . '.maxsize')
         ]);
 
         $user = auth()->user();

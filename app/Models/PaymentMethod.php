@@ -7,11 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class PaymentMethod extends Model
 {
-    const TYPE_CARD = 0;
+    protected $fillable = ['gateway', 'info', 'main', 'title'];
 
-    protected $fillable = ['type', 'info', 'main', 'title'];
-
-    protected $visible = ['id', 'type', 'main', 'title'];
+    protected $visible = ['id', 'gateway', 'main', 'title'];
 
     protected $casts = [
         'info' => 'array',

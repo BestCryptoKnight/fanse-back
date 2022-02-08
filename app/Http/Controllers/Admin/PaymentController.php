@@ -15,7 +15,15 @@ class PaymentController extends Controller
         $query = Payment::query()->with(['user', 'to']);
         if ($request->input('q')) {
             $query->where('hash', 'like', '%' . $request->input('q') . '%')
-                ->orWhere('token', 'like', '%' . $request->input('q') . '%');
+                ->orWhere('token', 'like', '%' . $request->input('q') . '%')
+                ->orWhereHas('user', function ($q) use ($request) {
+                    $q->where('username', 'like', '%' . $request->input('q') . '%')
+                        ->orWhere('name', 'like', '%' . $request->input('q') . '%');
+                })
+                ->orWhereHas('to', function ($q) use ($request) {
+                    $q->where('username', 'like', '%' . $request->input('q') . '%')
+                        ->orWhere('name', 'like', '%' . $request->input('q') . '%');
+                });
         }
 
         switch ($type) {

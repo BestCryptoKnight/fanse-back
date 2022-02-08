@@ -4,6 +4,7 @@ namespace App\Providers\Payment\Drivers;
 
 use App\Models\Bundle;
 use App\Models\Payment as PaymentModel;
+use App\Models\Payout;
 use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
@@ -51,6 +52,16 @@ class PaypalProvider extends AbstractProvider
     public function isCC()
     {
         return false;
+    }
+
+    public function forPayment()
+    {
+        return true;
+    }
+
+    public function forPayout()
+    {
+        return true;
     }
 
     public function getApi()
@@ -273,5 +284,14 @@ class PaypalProvider extends AbstractProvider
             Log::error($e->getMessage());
         }
         return false;
+    }
+
+    public function export(Payout $payout, $handler)
+    {
+        fputcsv($handler, [
+            $payout->info['info']['paypal'],
+            $payout->amount / 100,
+            config('misc.payment.currency.code')
+        ]);
     }
 }

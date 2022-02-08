@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\PayoutMethod;
 use App\Models\User;
+use App\Models\Verification;
 use Illuminate\Database\Seeder;
 use Hash;
 use Illuminate\Support\Carbon;
@@ -40,7 +42,7 @@ class AdminSeeder extends Seeder
             'status' => Verification::STATUS_APPROVED
         ]);
         $user->payoutMethod()->create([
-            'type' => PayoutMethod::TYPE_PAYPAL,
+            'gateway' => 'paypal',
             'info' => ['paypal' => $email]
         ]);
     }
