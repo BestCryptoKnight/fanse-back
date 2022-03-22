@@ -115,10 +115,10 @@ class PayoutController extends Controller
         $gateways = [];
         foreach ($payoutBatch->payouts as $payout) {
             $gateway = $payout->info['gateway'];
-            if (!in_array($gateway, $files)) {
+            if (!isset($files[$gateway])) {
                 $files[$gateway] = fopen(storage_path('app/tmp') . DIRECTORY_SEPARATOR . $gateway . '.csv', 'w');
             }
-            if (!in_array($gateway, $gateways)) {
+            if (!isset($gateways[$gateway])) {
                 $gateways[$gateway] = PaymentGateway::driver($gateway);
             }
             $gateways[$gateway]->export($payout, $files[$gateway]);
