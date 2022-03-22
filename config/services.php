@@ -46,6 +46,12 @@ return [
         'enabled' => true
     ],
 
+    'stripe' => [
+        'enabled' => true,
+        'public_key' => env('STRIPE_PUBLIC_KEY', ''),
+        'secret_key' => env('STRIPE_SECRET_KEY', ''),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

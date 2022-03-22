@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Providers\Payment\Drivers\BankProvider;
 use App\Providers\Payment\Drivers\CentrobillProvider;
 use App\Providers\Payment\Drivers\PaypalProvider;
+use App\Providers\Payment\Drivers\StripeProvider;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Manager;
@@ -18,7 +19,7 @@ use InvalidArgumentException;
 class PaymentManager extends Manager
 {
     protected $config = [];
-    private $available = ['paypal', 'centrobill', 'bank'];
+    private $available = ['paypal', 'centrobill', 'bank', 'stripe'];
 
     protected function createBankDriver()
     {
@@ -43,6 +44,15 @@ class PaymentManager extends Manager
         $config = $this->container->make('config')['services.centrobill'];
         return $this->buildProvider(
             CentrobillProvider::class,
+            $config
+        );
+    }
+
+    protected function createStripeDriver()
+    {
+        $config = $this->container->make('config')['services.stripe'];
+        return $this->buildProvider(
+            StripeProvider::class,
             $config
         );
     }
