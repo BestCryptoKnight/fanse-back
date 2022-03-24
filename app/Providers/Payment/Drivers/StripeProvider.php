@@ -59,13 +59,10 @@ class StripeProvider extends AbstractProvider
     public function intent()
     {
         $customer = \Stripe\Customer::create();
-        $intent = $this->getApi()->setupIntents->create(
-            [
-                'customer' => $customer->id,
-                'payment_method_types' => ['card'],
-            ]
-        );
-
+        $intent = $this->getApi()->setupIntents->create([
+            'customer' => $customer->id,
+            'payment_method_types' => ['card'],
+        ]);
         return [
             'customer' => ['id' => $customer->id],
             'token' => $intent->client_secret
@@ -74,70 +71,14 @@ class StripeProvider extends AbstractProvider
 
     public function attach(Request $request, User $user)
     {
-
-
-        $customer = \Stripe\Customer::create();
-        $intent = $this->getApi()->setupIntents->create(
-            [
-                'customer' => $customer->id,
-                'payment_method_types' => ['card'],
-            ]
-        );
-
-        $profile = [
-            'customer' => [
-                'id' => $customer->id
-            ],
-            ''
+        $intent = $this->getApi()->setupIntents->retrieve($request['setup_intent']);
+        $payment_method_id = $intent->payment_method;
+        $method = $this->getApi()->paymentMethods->retrieve($payment_method_id);
+        return [
+            'title' => '****' . $method->card->last4,
+            'customer' => ['id' => $intent->customer],
+            'method' => ['id' => $payment_method_id]
         ];
-
-        try {
-            $client = new Client();
-
-            $response = $client->request('POST', $this->url . '/payment', [
-                'headers' => [
-                    'Authorization' => $this->config['service']['api_key']
-                ],
-                'json' => [
-                    'paymentSource' => [
-                        'type' => 'token',
-                        'value' => $request['token'],
-                        '3ds' => false
-                    ],
-                    'sku' => [
-                        'title' => 'Initial Payment',
-                        'siteId' => $this->config['service']['site_id'],
-                        'price' => [
-                            [
-                                'offset' => '0d',
-                                'amount' => 1.00,
-                                'currency' => config('misc.payment.currency.code'),
-                                'repeat' => false
-                            ]
-                        ],
-                    ],
-                    'consumer' => [
-                        'ip' => config('app.debug') ? '178.140.173.99' : $request->ip(),
-                        'email' => $user->email,
-                        'externalId' => strlen($user->id . '') < 3 ? '00' . $user->id : $user->id
-                    ]
-                ]
-            ]);
-
-            $json = json_decode($response->getBody(), true);
-            if ($this->ccVerify($json)) {
-                $profile = [
-                    'consumer' => [
-                        'id' => $json['consumer']['id']
-                    ]
-                ];
-                $this->ccRefund($json['payment']);
-                return $profile;
-            }
-            return null;
-        } catch (\Exception $ex) {
-            Log::error($ex->getMessage());
-        }
     }
 
     public function buy(Request $request, PaymentModel $paymentModel)

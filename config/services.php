@@ -37,7 +37,7 @@ return [
     ],
 
     'centrobill' => [
-        'enabled' => true,
+        'enabled' => false,
         'site_id' => env('CENTROBILL_SITE_ID', ''),
         'api_key' => env('CENTROBILL_API_KEY', ''),
     ],

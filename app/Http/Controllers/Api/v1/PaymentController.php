@@ -36,7 +36,10 @@ class PaymentController extends Controller
         if (PaymentGateway::getCCDriver()) {
             $dd[] = ['id' => 'cc', 'name' => ''];
         }
-        return response()->json(['gateways' => $dd, 'method' => auth()->user()->mainPaymentMethod]);
+        return response()->json([
+            'gateways' => $dd,
+            'method' => auth()->user()->mainPaymentMethod
+        ]);
     }
 
     public function price(Request $request)
@@ -250,7 +253,15 @@ class PaymentController extends Controller
 
     public function methodIndex()
     {
-        return response()->json(['methods' => auth()->user()->paymentMethods]);
+        $driver = PaymentGateway::getCCDriver();
+        $cc = $driver ? [
+            'id' => $driver->getId()
+        ] : null;
+
+        return response()->json([
+            'methods' => auth()->user()->paymentMethods,
+            'cc' => $cc
+        ]);
     }
 
     public function methodMain(PaymentMethod $paymentMethod)
@@ -290,7 +301,7 @@ class PaymentController extends Controller
 
         $m = $user->paymentMethods()->create([
             'info' => $info,
-            'title' => $request->input('title'),
+            'title' => isset($info['title']) ? $info['title'] : $request->input('title'),
             'gateway' => 'cc'
         ]);
         if (!$user->mainPaymentMethod) {
