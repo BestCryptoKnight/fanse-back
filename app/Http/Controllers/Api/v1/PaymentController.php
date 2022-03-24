@@ -30,11 +30,12 @@ class PaymentController extends Controller
         $dd = [];
         foreach ($drivers as $d) {
             if (!$d->isCC()) {
-                $dd[] = ['id' => $d->getId(), 'name' => $d->getName()];
+                $dd[] = ['cc' => false, 'id' => $d->getId(), 'name' => $d->getName()];
             }
         }
-        if (PaymentGateway::getCCDriver()) {
-            $dd[] = ['id' => 'cc', 'name' => ''];
+        $cc = PaymentGateway::getCCDriver();
+        if ($cc) {
+            $dd[] = ['cc' => true, 'id' => $cc->getId(), 'name' => ''];
         }
         return response()->json([
             'gateways' => $dd,
@@ -230,7 +231,26 @@ class PaymentController extends Controller
     public function process(string $gateway, Request $request)
     {
         $gateway = PaymentGateway::driver($gateway);
-        $payment = $gateway->validate($request);
+        $result = $gateway->validate($request);
+        if (is_array($result)) {
+            $payment = $result['payment'];
+            if (isset($result['info'])) {
+                $m = $payment->user->paymentMethods()->where([
+                    'gateway' => 'cc',
+                    'title' => $result['title']
+                ])->first();
+                if (!$m) {
+                    $m = $payment->user->paymentMethods()->create([
+                        'gateway' => 'cc',
+                        'title' => $result['title'],
+                        'info' => $result['info'],
+                        'main' => $payment->user->mainPaymentMethod ? false : true
+                    ]);
+                }
+            }
+        } else {
+            $payment = $result;
+        }
         return $this->doProcess($payment);
     }
 

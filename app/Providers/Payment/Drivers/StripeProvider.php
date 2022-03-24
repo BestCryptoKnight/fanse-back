@@ -64,7 +64,6 @@ class StripeProvider extends AbstractProvider
             'payment_method_types' => ['card'],
         ]);
         return [
-            'customer' => ['id' => $customer->id],
             'token' => $intent->client_secret
         ];
     }
@@ -83,79 +82,24 @@ class StripeProvider extends AbstractProvider
 
     public function buy(Request $request, PaymentModel $paymentModel)
     {
-        $client = new Client();
-
-        $source = ['3ds' => false];
-        $consumer = [
-            'ip' => config('app.debug') ? '178.140.173.99' : $request->ip()
-        ];
-
-        if ($paymentModel->user->mainPaymentMethod) {
-            $source['type'] = 'consumer';
-            $source['value'] = $paymentModel->user->mainPaymentMethod->info['consumer']['id'];
-            $consumer['id'] = $paymentModel->user->mainPaymentMethod->info['consumer']['id'];
-        } else {
-            $source['type'] = 'token';
-            $source['value'] = $request['token'];
-            $consumer['email'] = $paymentModel->user->email;
-            $consumer['externalId'] = strlen($paymentModel->user->id . '') < 3
-                ? '00' . $paymentModel->user->id : $paymentModel->user->id;
-        }
-
-        $title = '';
-        switch ($paymentModel->type) {
-            case PaymentModel::TYPE_MESSAGE:
-                $title = __('app.unlock-message');
-                break;
-            case PaymentModel::TYPE_POST:
-                $title = __('app.unlock-post');
-                break;
-            case PaymentModel::TYPE_TIP:
-                $title = __('app.tip');
-                break;
-        }
-
-        $payload = [
-            'paymentSource' => $source,
-            'sku' => [
-                'title' => $title,
-                'siteId' => $this->config['service']['site_id'],
-                'price' => [
-                    [
-                        'offset' => '0d',
-                        'amount' => $paymentModel->amount / 100,
-                        'currency' => config('misc.payment.currency.code'),
-                        'repeat' => false
-                    ]
-                ],
-            ],
+        $params = [
+            'amount' => $paymentModel->amount,
+            'currency' => config('misc.payment.currency.code'),
             'metadata' => [
                 'hash' => $paymentModel->hash
             ],
-            'consumer' => $consumer
         ];
-
-        try {
-            $response = $client->request('POST', $this->url . '/payment', [
-                'headers' => [
-                    'Authorization' => $this->config['service']['api_key']
-                ],
-                'json' => $payload
-            ]);
-            $json = json_decode($response->getBody(), true);
-            if ($this->ccVerify($json)) {
-                $paymentModel->status = PaymentModel::STATUS_COMPLETE;
-                $paymentModel->token = $json['payment']['transactionId'];
-                $paymentModel->save();
-                return [
-                    'info' => [
-                        'consumer' => ['id' => $json['consumer']['id']]
-                    ]
-                ];
-            }
-        } catch (\Exception $ex) {
-            Log::error($ex->getMessage());
+        if ($paymentModel->user->mainPaymentMethod) {
+        } else {
+            $customer = \Stripe\Customer::create();
+            $params['customer'] = $customer->id;
+            $params['setup_future_usage'] = 'off_session';
         }
+
+        $intent = $this->getApi()->paymentIntents->create($params);
+        return [
+            'token' => $intent->client_secret
+        ];
     }
 
     function subscribe(Request $request, PaymentModel $paymentModel, User $user, Bundle $bundle = null)
@@ -257,11 +201,32 @@ class StripeProvider extends AbstractProvider
 
     public function validate(Request $request)
     {
-        if ($this->ccVerify($request)) {
+        $intent = $this->getApi()->paymentIntents->retrieve($request['payment_intent']);
+        if ($intent->status == 'succeeded') {
+            $payment_method_id = $intent->payment_method;
+            $method = $this->getApi()->paymentMethods->retrieve($payment_method_id);
+            $paymentModel = PaymentModel::where('hash', $intent->metadata->hash)->first();
+            if ($paymentModel) {
+                $paymentModel->status = PaymentModel::STATUS_COMPLETE;
+                $paymentModel->token = $intent->id;
+                $paymentModel->save();
+            }
+            return [
+                'payment' => $paymentModel,
+                'title' => '****' . $method->card->last4,
+                'info' => [
+                    'customer' => ['id' => $intent->customer],
+                    'method' => ['id' => $payment_method_id]
+                ]
+            ];
+        }
+
+        /*if ($this->ccVerify($request)) {
             if (isset($request['subscription']['cycle']) && $request['subscription']['cycle'] > 0) {
                 return $this->validateRenewSubscription($request);
             }
-        }
+        }*/
+
         return false;
     }
 
