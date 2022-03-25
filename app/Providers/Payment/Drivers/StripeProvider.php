@@ -131,7 +131,7 @@ class StripeProvider extends AbstractProvider
         $price = null;
         foreach ($prices as $p) {
             if (
-                $p->recurring->interval == 'month'
+                $p->recurring->interval == 'day'
                 && $p->recurring->interval_count == $months
                 && $p->unit_amount == $paymentModel->amount
             ) {
@@ -145,7 +145,7 @@ class StripeProvider extends AbstractProvider
                 'unit_amount' => $paymentModel->amount,
                 'currency' => config('misc.payment.currency.code'),
                 'recurring' => [
-                    'interval' => 'month',
+                    'interval' => 'day',
                     'interval_count' => $months
                 ]
             ]);
@@ -186,25 +186,21 @@ class StripeProvider extends AbstractProvider
 
     public function unsubscribe(Subscription $subscription)
     {
-        $client = new Client();
         try {
-            $response = $client->request('PUT', $this->url . '/subscription/' . $subscription->token . '/cancel', [
-                'headers' => [
-                    'Authorization' => $this->config['service']['api_key']
-                ]
-            ]);
-            $json = json_decode($response->getBody(), true);
-            if ($json['status'] == 'canceled') {
-                return true;
-            }
-        } catch (\Exception $ex) {
-            Log::error($ex->getMessage());
+            $this->getApi()->subscriptions->cancel($subscription->token);
+            return true;
+        } catch (\Exception $e) {
         }
         return false;
     }
 
     public function validate(Request $request)
     {
+        // subscription renew
+        if (isset($request['object']) && $request['object'] == 'event') {
+            return $this->validateRenewSubscription($request);
+        }
+        // other payments
         $intent = $this->getApi()->paymentIntents->retrieve($request['payment_intent']);
         if ($intent->status == 'succeeded') {
             $payment_method_id = $intent->payment_method;
@@ -230,45 +226,41 @@ class StripeProvider extends AbstractProvider
             ];
         }
 
-        /*if ($this->ccVerify($request)) {
-            if (isset($request['subscription']['cycle']) && $request['subscription']['cycle'] > 0) {
-                return $this->validateRenewSubscription($request);
-            }
-        }*/
-
         return false;
     }
 
     private function validateRenewSubscription(Request $request)
     {
-        try {
-            $existing = PaymentModel::where(
-                'hash',
-                $request['metadata']['hash']
-                    . '..'
-                    . $request['subscription']['cycle']
-            )->first();
-            if ($existing) {
-                return $existing;
-            }
-            $firstPaymentModel = PaymentModel::where('hash', $request['metadata']['hash'])->first();
+        $invoice = $this->getApi()->invoices->retrieve($request['data']['object']['invoice']);
+        $subscription_id = $invoice->subscription;
+        if ($subscription_id) {
+            $firstPaymentModel = PaymentModel::where('token', $subscription_id)->first();
             if ($firstPaymentModel) {
+                $subscription = $this->getApi()->subscriptions->retrieve($subscription_id);
+                $existing = PaymentModel::where(
+                    'hash',
+                    $firstPaymentModel->hash
+                        . '..'
+                        . $subscription->current_period_end
+                )->first();
+                if ($existing) {
+                    return $existing;
+                }
                 $info = $firstPaymentModel->info;
-                $info['expire'] = $request['subscription']['renewalDate'];
-                $newPaymentModel = Payment::create([
-                    'hash' => $firstPaymentModel->hash . '..' . $request['subscription']['cycle'],
+                $info['expire'] = Carbon::createFromTimestamp($subscription->current_period_end)->toIso8601String();
+                $newPaymentModel = PaymentModel::create([
+                    'hash' => $firstPaymentModel->hash . '..' . $subscription->current_period_end,
                     'user_id' => $firstPaymentModel->user_id,
+                    'to_id' => $firstPaymentModel->to_id,
                     'type' => PaymentModel::TYPE_SUBSCRIPTION_RENEW,
                     'info' => $info,
                     'amount' => $firstPaymentModel->amount,
                     'gateway' => $this->getId(),
-                    'token' => $request['subscription']['id'],
+                    'token' => $subscription_id,
                     'status' => PaymentModel::STATUS_COMPLETE,
                 ]);
                 return $newPaymentModel;
             }
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
         }
         return false;
     }

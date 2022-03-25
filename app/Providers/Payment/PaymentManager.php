@@ -156,7 +156,7 @@ class PaymentManager extends Manager
             case Payment::TYPE_SUBSCRIPTION_RENEW:
                 if (isset($payment->info['expire'])) {
                     $subscription = $payment->user->subscriptions()->where('token', $payment->token)->first();
-                    $subscription->expire = new Carbon($payment->info['expire']);
+                    $subscription->expires = new Carbon($payment->info['expire']);
                     $subscription->save();
                 }
                 break;
