@@ -90,6 +90,10 @@ class StripeProvider extends AbstractProvider
             ],
         ];
         if ($paymentModel->user->mainPaymentMethod) {
+            $params['customer'] = $paymentModel->user->mainPaymentMethod->info['customer']['id'];
+            $params['payment_method'] = $paymentModel->user->mainPaymentMethod->info['method']['id'];
+            $params['off_session'] = true;
+            $params['confirm'] = true;
         } else {
             $customer = \Stripe\Customer::create();
             $params['customer'] = $customer->id;
@@ -97,6 +101,13 @@ class StripeProvider extends AbstractProvider
         }
 
         $intent = $this->getApi()->paymentIntents->create($params);
+        if ($intent->status == 'succeeded') {
+            $paymentModel->status = PaymentModel::STATUS_COMPLETE;
+            $paymentModel->token = $intent->id;
+            $paymentModel->save();
+            return ['info' => true];
+        }
+
         return [
             'token' => $intent->client_secret
         ];
@@ -104,80 +115,73 @@ class StripeProvider extends AbstractProvider
 
     function subscribe(Request $request, PaymentModel $paymentModel, User $user, Bundle $bundle = null)
     {
-        $client = new Client();
-
-        $source = ['3ds' => false];
-        $consumer = [
-            'ip' => config('app.debug') ? '178.140.173.99' : $request->ip()
-        ];
-
-        if ($paymentModel->user->mainPaymentMethod) {
-            $source['type'] = 'consumer';
-            $source['value'] = $paymentModel->user->mainPaymentMethod->info['consumer']['id'];
-            $consumer['id'] = $paymentModel->user->mainPaymentMethod->info['consumer']['id'];
-        } else {
-            $source['type'] = 'token';
-            $source['value'] = $request['token'];
-            $consumer['email'] = $paymentModel->user->email;
-            $consumer['externalId'] = strlen($paymentModel->user->id . '') < 3
-                ? '00' . $paymentModel->user->id : $paymentModel->user->id;
-        }
-
-        $payload = [
-            'paymentSource' => $source,
-            'sku' => [
-                'title' => __('app.subscription-to-x', [
-                    'site' => config('app.name'),
-                    'user' => $user->username,
-                    'months' => $bundle ? $bundle->months : 1
-                ]),
-                'siteId' => $this->config['service']['site_id'],
-                'price' => [
-                    [
-                        'offset' => '0d',
-                        'amount' => $paymentModel->amount / 100,
-                        'currency' => config('misc.payment.currency.code'),
-                        'repeat' => false
-                    ],
-                    [
-                        'offset' => ($bundle ? $bundle->months : 1) * 30 . 'd',
-                        'amount' => $paymentModel->amount / 100,
-                        'currency' => config('misc.payment.currency.code'),
-                        'repeat' => true
-                    ]
-                ],
-                'url' => [
-                    'ipnUrl' => url('/latest/process/centrobill')
-                ]
-            ],
-            'consumer' => $consumer,
-            'metadata' => [
-                'hash' => $paymentModel->hash
-            ]
-        ];
-
+        $months = $bundle ? $bundle->months : 1;
+        // find product or create one
+        $product_id = 'prod_sub_' . $user->id;
         try {
-            $response = $client->request('POST', $this->url . '/payment', [
-                'headers' => [
-                    'Authorization' => $this->config['service']['api_key']
-                ],
-                'json' => $payload
+            $product = $this->getApi()->products->retrieve($product_id);
+        } catch (\Exception $e) {
+            $product = $this->getApi()->products->create([
+                'id' => $product_id,
+                'name' => 'Subscription to User #' . $user->id
             ]);
-            $json = json_decode($response->getBody(), true);
-            if ($this->ccVerify($json)) {
-                $paymentModel->status = PaymentModel::STATUS_COMPLETE;
-                $paymentModel->token = $json['subscription']['id'];
-                $paymentModel->save();
-
-                return [
-                    'info' => [
-                        'consumer' => ['id' => $json['consumer']['id']]
-                    ]
-                ];
-            }
-        } catch (\Exception $ex) {
-            Log::error($ex->getMessage());
         }
+        // find price or create one
+        $prices = $this->getApi()->prices->all(['product' => $product_id]);
+        $price = null;
+        foreach ($prices as $p) {
+            if (
+                $p->recurring->interval == 'month'
+                && $p->recurring->interval_count == $months
+                && $p->unit_amount == $paymentModel->amount
+            ) {
+                $price = $p;
+                break;
+            }
+        }
+        if (!$price) {
+            $price = $this->getApi()->prices->create([
+                'product' => $product_id,
+                'unit_amount' => $paymentModel->amount,
+                'currency' => config('misc.payment.currency.code'),
+                'recurring' => [
+                    'interval' => 'month',
+                    'interval_count' => $months
+                ]
+            ]);
+        }
+
+        // create subscription
+        $params = [
+            'items' => [[
+                'price' => $price->id,
+                'metadata' => [
+                    'hash' => $paymentModel->hash
+                ],
+            ]],
+        ];
+        if ($paymentModel->user->mainPaymentMethod) {
+            $params['customer'] = $paymentModel->user->mainPaymentMethod->info['customer']['id'];
+            $params['default_payment_method'] = $paymentModel->user->mainPaymentMethod->info['method']['id'];
+            $params['off_session'] = true;
+        } else {
+            $customer = \Stripe\Customer::create();
+            $params['customer'] = $customer->id;
+            $params['payment_behavior'] = 'default_incomplete';
+            $params['expand'] = ['latest_invoice.payment_intent'];
+        }
+
+        $subscription = $this->getApi()->subscriptions->create($params);
+        if ($subscription->status == 'active') {
+            $paymentModel->status = PaymentModel::STATUS_COMPLETE;
+            $paymentModel->token = $subscription->id;
+            $paymentModel->save();
+            return ['info' => true];
+        }
+
+        return [
+            'token' => $subscription->latest_invoice->payment_intent->client_secret
+        ];
     }
 
     public function unsubscribe(Subscription $subscription)
@@ -205,7 +209,12 @@ class StripeProvider extends AbstractProvider
         if ($intent->status == 'succeeded') {
             $payment_method_id = $intent->payment_method;
             $method = $this->getApi()->paymentMethods->retrieve($payment_method_id);
-            $paymentModel = PaymentModel::where('hash', $intent->metadata->hash)->first();
+            if ($intent->metadata->hash) {
+                $paymentModel = PaymentModel::where('hash', $intent->metadata->hash)->first();
+            } else {
+                $invoice = $this->getApi()->invoices->retrieve($intent->invoice);
+                $paymentModel = PaymentModel::where('hash', $invoice->lines->data[0]->metadata->hash)->first();
+            }
             if ($paymentModel) {
                 $paymentModel->status = PaymentModel::STATUS_COMPLETE;
                 $paymentModel->token = $intent->id;
