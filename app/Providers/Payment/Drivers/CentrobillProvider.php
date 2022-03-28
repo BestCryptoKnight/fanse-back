@@ -328,9 +328,10 @@ class CentrobillProvider extends AbstractProvider
             if ($firstPaymentModel) {
                 $info = $firstPaymentModel->info;
                 $info['expire'] = $request['subscription']['renewalDate'];
-                $newPaymentModel = Payment::create([
+                $newPaymentModel = PaymentModel::create([
                     'hash' => $firstPaymentModel->hash . '..' . $request['subscription']['cycle'],
                     'user_id' => $firstPaymentModel->user_id,
+                    'to_id' => $firstPaymentModel->to_id,
                     'type' => PaymentModel::TYPE_SUBSCRIPTION_RENEW,
                     'info' => $info,
                     'amount' => $firstPaymentModel->amount,

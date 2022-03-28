@@ -109,4 +109,7 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
 
     // notifications
     Route::get('notifications', 'NotificationController@index');
+
+    // stripe
+    Route::post('stripe/intent', 'StripeController@intent');
 });

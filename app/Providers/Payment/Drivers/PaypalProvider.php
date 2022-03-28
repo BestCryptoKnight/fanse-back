@@ -267,9 +267,10 @@ class PaypalProvider extends AbstractProvider
                 if ($firstPaymentModel) {
                     $info = $firstPaymentModel->info;
                     $info['expire'] = $request['resource']['agreement_details']['next_billing_date'];
-                    $newPaymentModel = Payment::create([
+                    $newPaymentModel = PaymentModel::create([
                         'hash' => $firstPaymentModel->hash . '..' . $request['resource']['agreement_details']['cycles_completed'],
                         'user_id' => $firstPaymentModel->user_id,
+                        'to_id' => $firstPaymentModel->to_id,
                         'type' => PaymentModel::TYPE_SUBSCRIPTION_RENEW,
                         'info' => $info,
                         'amount' => $firstPaymentModel->amount,

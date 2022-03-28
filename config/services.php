@@ -37,13 +37,19 @@ return [
     ],
 
     'centrobill' => [
-        'enabled' => true,
+        'enabled' => false,
         'site_id' => env('CENTROBILL_SITE_ID', ''),
         'api_key' => env('CENTROBILL_API_KEY', ''),
     ],
 
     'bank' => [
         'enabled' => true
+    ],
+
+    'stripe' => [
+        'enabled' => true,
+        'public_key' => env('STRIPE_PUBLIC_KEY', ''),
+        'secret_key' => env('STRIPE_SECRET_KEY', ''),
     ],
 
     'google' => [

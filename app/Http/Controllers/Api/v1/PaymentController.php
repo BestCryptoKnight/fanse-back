@@ -30,13 +30,17 @@ class PaymentController extends Controller
         $dd = [];
         foreach ($drivers as $d) {
             if (!$d->isCC()) {
-                $dd[] = ['id' => $d->getId(), 'name' => $d->getName()];
+                $dd[] = ['cc' => false, 'id' => $d->getId(), 'name' => $d->getName()];
             }
         }
-        if (PaymentGateway::getCCDriver()) {
-            $dd[] = ['id' => 'cc', 'name' => ''];
+        $cc = PaymentGateway::getCCDriver();
+        if ($cc) {
+            $dd[] = ['cc' => true, 'id' => $cc->getId(), 'name' => ''];
         }
-        return response()->json(['gateways' => $dd, 'method' => auth()->user()->mainPaymentMethod]);
+        return response()->json([
+            'gateways' => $dd,
+            'method' => auth()->user()->mainPaymentMethod
+        ]);
     }
 
     public function price(Request $request)
@@ -227,7 +231,26 @@ class PaymentController extends Controller
     public function process(string $gateway, Request $request)
     {
         $gateway = PaymentGateway::driver($gateway);
-        $payment = $gateway->validate($request);
+        $result = $gateway->validate($request);
+        if (is_array($result)) {
+            $payment = $result['payment'];
+            if (isset($result['info'])) {
+                $m = $payment->user->paymentMethods()->where([
+                    'gateway' => 'cc',
+                    'title' => $result['title']
+                ])->first();
+                if (!$m) {
+                    $m = $payment->user->paymentMethods()->create([
+                        'gateway' => 'cc',
+                        'title' => $result['title'],
+                        'info' => $result['info'],
+                        'main' => $payment->user->mainPaymentMethod ? false : true
+                    ]);
+                }
+            }
+        } else {
+            $payment = $result;
+        }
         return $this->doProcess($payment);
     }
 
@@ -250,7 +273,15 @@ class PaymentController extends Controller
 
     public function methodIndex()
     {
-        return response()->json(['methods' => auth()->user()->paymentMethods]);
+        $driver = PaymentGateway::getCCDriver();
+        $cc = $driver ? [
+            'id' => $driver->getId()
+        ] : null;
+
+        return response()->json([
+            'methods' => auth()->user()->paymentMethods,
+            'cc' => $cc
+        ]);
     }
 
     public function methodMain(PaymentMethod $paymentMethod)
@@ -290,7 +321,7 @@ class PaymentController extends Controller
 
         $m = $user->paymentMethods()->create([
             'info' => $info,
-            'title' => $request->input('title'),
+            'title' => isset($info['title']) ? $info['title'] : $request->input('title'),
             'gateway' => 'cc'
         ]);
         if (!$user->mainPaymentMethod) {
