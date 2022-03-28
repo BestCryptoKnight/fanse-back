@@ -54,6 +54,7 @@ class UserController extends Controller
     public function show(User $user)
     {
         $user->makeAuth();
+        $user->makeVisible(['commission']);
         return response()->json($user);
     }
 
@@ -74,10 +75,11 @@ class UserController extends Controller
             'website' => 'nullable|string|url',
             'email' => 'required|email|unique:App\Models\User,email,' . $user->id,
             'new_password' => 'nullable|min:8|confirmed',
+            'commission' => 'nullable|integer|min:0|max:100',
         ]);
 
         $user->fill($request->only([
-            'username', 'name', 'bio', 'location', 'website', 'email'
+            'username', 'name', 'bio', 'location', 'website', 'email', 'commission'
         ]));
         if ($user->channel_type == User::CHANNEL_EMAIL) {
             $user->channel_id = $user->email;
@@ -87,6 +89,7 @@ class UserController extends Controller
         }
         $user->save();
         $user->makeAuth();
+        $user->makeVisible(['commission']);
 
         return response()->json($user);
     }

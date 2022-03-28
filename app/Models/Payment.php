@@ -51,7 +51,7 @@ class Payment extends Model
                 }
             }
             if (!$model->fee) {
-                $model->fee = config('misc.payment.fee') * 100;
+                $model->fee = config('misc.payment.commission');
             }
         });
     }

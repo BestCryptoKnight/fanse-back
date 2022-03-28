@@ -41,7 +41,8 @@ class User extends Authenticatable
         'price',
         'avatar',
         'cover',
-        'email_verified_at'
+        'email_verified_at',
+        'commission'
     ];
 
     protected $visible = [
@@ -254,6 +255,11 @@ class User extends Authenticatable
     public function getIsCreatorAttribute()
     {
         return $this->role == self::ROLE_CREATOR;
+    }
+
+    public function getCommissionAttribute($value)
+    {
+        return $value ? $value : config('misc.payment.commission');
     }
 
     public static function typeToString(int $type)
