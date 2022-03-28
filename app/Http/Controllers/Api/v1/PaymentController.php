@@ -144,7 +144,7 @@ class PaymentController extends Controller
                 if ($user->id == $sub->id) {
                     abort(403);
                 }
-                $to = $sub->id;
+                $to = $sub;
                 $amount = $sub->price;
                 if ($request->input('bundle_id')) {
                     $info['bundle_id'] = $request['bundle_id'];
@@ -158,7 +158,7 @@ class PaymentController extends Controller
                 if ($user->id == $post->user_id) {
                     abort(403);
                 }
-                $to = $post->user_id;
+                $to = $post->user;
                 $amount = $post->price;
                 break;
             case Payment::TYPE_MESSAGE:
@@ -167,7 +167,7 @@ class PaymentController extends Controller
                 if ($user->id == $message->user_id) {
                     abort(403);
                 }
-                $to = $message->user_id;
+                $to = $message->user;
                 $amount = $message->price;
                 break;
             case Payment::TYPE_TIP:
@@ -176,7 +176,7 @@ class PaymentController extends Controller
                     $info['post_id'] = $request['post_id'];
                 }
                 $amount = $request['amount'] * 100;
-                $to = $request['to_id'];
+                $to = User::find($request['to_id']);
                 break;
         }
 
@@ -188,10 +188,11 @@ class PaymentController extends Controller
 
         $payment = $user->payments()->create([
             'type' => $request['type'],
-            'to_id' => $to,
+            'to_id' => $to->id,
             'info' => $info,
             'amount' => $amount,
-            'gateway' => $gateway->getId()
+            'gateway' => $gateway->getId(),
+            'fee' => $to->commission
         ]);
 
         $response = $request['type'] == Payment::TYPE_SUBSCRIPTION_NEW

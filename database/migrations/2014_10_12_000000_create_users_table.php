@@ -22,7 +22,8 @@ class CreateUsersTable extends Migration
             $table->tinyInteger('channel_type')->default(0)->comment('0 - email, 1 - twitter, 2 - google');
             $table->string('channel_id');
             $table->timestamp('email_verified_at')->nullable();
-            $table->tinyInteger('role')->default(0);
+            $table->tinyInteger('role')->unsigned()->default(0);
+            $table->tinyInteger('commission')->unsigned()->nullable();
             $table->text('bio')->nullable();
             $table->string('location')->nullable();
             $table->string('website')->nullable();

@@ -53,7 +53,7 @@ return [
             'code' => 'USD',
             'format' => '%1$s%2$d',
         ],
-        'fee' => '0.2',
+        'commission' => '20',
     ],
 
     'profile' => [
