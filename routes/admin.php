@@ -11,7 +11,8 @@ Route::middleware(['auth:sanctum', 'abilities:admin'])->group(function () {
     Route::prefix('auth')->group(function () {
         Route::post('logout', 'AuthController@logout');
         Route::get('me', 'AuthController@me');
-    });
+    });  
+    
     Route::get('users/list/{type?}', 'UserController@index');
     Route::post('users/verification/approve/{user}', 'UserController@verificationApprove');
     Route::post('users/verification/decline/{user}', 'UserController@verificationDecline');

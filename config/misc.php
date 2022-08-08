@@ -18,7 +18,7 @@ return [
     ],
 
     'media' => [
-        'mimes' => 'jpg,png,mp4,mov',
+        'mimes' => 'jpeg,jpg,png,mp4,mov,heic',
         'maxsize' => 100000, // 100 mb
     ],
 
@@ -42,7 +42,7 @@ return [
                 'tip' => 100,
                 'post' => 100,
                 'message' => 100,
-                'discount' => 50,
+                'discount' => 95,
             ]
         ],
         'payout' => [
@@ -64,7 +64,7 @@ return [
         ],
         'avatar' => [
             'maxsize' => 20000,
-            'resize' => '1080x1080',
+            'resize' => '300x300',
         ],
         'cover' => [
             'maxsize' => 20000,

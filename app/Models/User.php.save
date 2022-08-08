@@ -43,20 +43,15 @@ class User extends Authenticatable
         'cover',
         'email_verified_at',
         'commission',
-        'last_seen',
-        'instagram',
-        'twitter',
-        'snapchat',
-        'tiktok'
+        'last_seen'
     ];
 
     protected $visible = [
-        'id', 'username', 'name', 'role', 'avatar', 'cover', 'price', 'is_subscribed', 'bundles', 'verification', 'last_seen','instagram','twitter','snapchat','tiktok'
+        'id', 'username', 'name', 'role', 'avatar', 'cover', 'price', 'is_subscribed', 'bundles', 'verification', 
     ];
 
     protected $with = ['subscribed'];
     protected $appends = ['is_subscribed', 'is_free'];
-    protected $dates = ['last_seen'];
 
     protected static function boot()
     {

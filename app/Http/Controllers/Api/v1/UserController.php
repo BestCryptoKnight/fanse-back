@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Payment as PaymentGateway;
 use Log;
+use Cache;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -26,7 +28,7 @@ class UserController extends Controller
     public function show(string $username)
     {
         $user = User::where('username', $username)->with('bundles')->firstOrFail();
-        $user->makeVisible(['bio', 'location', 'website']);
+        $user->makeVisible(['bio', 'location', 'website','instagram','twitter','snapchat','tiktok']);
         return response()->json($user);
     }
 
@@ -84,5 +86,59 @@ class UserController extends Controller
     public function dolog()
     {
         return;
+    }
+
+    /**
+     * Show user online status.
+     */
+    public function userStatus()
+    {
+        $users = User::all();
+        return response()->json($users);
+    }
+
+    public function status()
+    {
+        $users = User::all();
+
+        foreach ($users as $user) {
+
+            if (Cache::has('user-is-online-' . $user->id))
+                echo $user->name . " is online. Last seen: " . Carbon::parse($user->last_seen)->diffForHumans() . " ";
+            else {
+                if ($user->last_seen != null) {
+                    echo $user->name . " is offline. Last seen: " . Carbon::parse($user->last_seen)->diffForHumans() . " ";
+                } else {
+                    echo $user->name . " is offline. Last seen: No data ";
+                }
+            }
+        }
+    }
+
+    /**
+     * Live status.
+     */
+    public function liveStatus($user_id)
+    {
+        // get user data
+        $user = User::find($user_id);
+
+        // check online status
+        if (Cache::has('user-is-online-' . $user->id))
+            $status = 'Online';
+        else
+            $status = 'Offline';
+
+        // check last seen
+        if ($user->last_seen != null)
+            $last_seen = "Active " . Carbon::parse($user->last_seen)->diffForHumans();
+        else
+            $last_seen = "No data";
+
+        // response
+        return response()->json([
+            'status' => $status,
+            'last_seen' => $last_seen,
+        ]);
     }
 }

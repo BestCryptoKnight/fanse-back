@@ -76,10 +76,14 @@ class UserController extends Controller
             'email' => 'required|email|unique:App\Models\User,email,' . $user->id,
             'new_password' => 'nullable|min:8|confirmed',
             'commission' => 'nullable|integer|min:0|max:100',
+            'instagram' => 'nullable|string|url',
+            'twitter' => 'nullable|string|url',
+            'snapchat' => 'nullable|string|url',
+            'tiktok' => 'nullable|string|url'
         ]);
 
         $user->fill($request->only([
-            'username', 'name', 'bio', 'location', 'website', 'email', 'commission'
+            'username', 'name', 'bio', 'location', 'website', 'email', 'commission','instagram','twitter','snapchat','tiktok'
         ]));
         if ($user->channel_type == User::CHANNEL_EMAIL) {
             $user->channel_id = $user->email;

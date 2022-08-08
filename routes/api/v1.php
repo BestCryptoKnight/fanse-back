@@ -22,6 +22,13 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::post('process/{gateway}', 'PaymentController@process');
+Route::get('users/guest/{username}', 'UserController@show');
+Route::get('posts/guest/{user}', 'PostController@user');
+
+// check online status
+Route::get('userstatus', 'UserController@userStatus');
+Route::get('status', 'UserController@status');
+Route::get('live-status/{id}', 'UserController@liveStatus');
 
 Broadcast::routes(['middleware' => ['auth:sanctum', 'abilities:user']]);
 
@@ -42,7 +49,6 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::post('posts/{post}/{poll}/vote', 'PostController@vote');
     Route::post('posts/{post}/like', 'PostController@like');
     Route::get('posts/user/{user}', 'PostController@user');
-
     // media
     Route::apiResource('media', 'MediaController')->only(['store', 'destroy']);
 
@@ -79,8 +85,8 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::get('lists/{id}', 'ListController@indexList');
 
     // users
-    Route::get('users/{username}', 'UserController@show');
     Route::get('users', 'UserController@suggestions');
+    Route::get('users/{username}', 'UserController@show');
 
     // subscriptions
     Route::get('subscriptions', 'UserController@subscriptions');

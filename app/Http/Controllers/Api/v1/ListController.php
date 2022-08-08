@@ -25,7 +25,7 @@ class ListController extends Controller
         $lists = $lists->toArray();
         $lists[] = [
             'id' => CustomList::DEFAULT_FOLLOWING,
-            'listees_count' => $user->subscriptions()->count()
+            'listees_count' => $user->following()->count()
         ];
 
         return response()->json([
@@ -60,7 +60,7 @@ class ListController extends Controller
         // following
         $lists[] = [
             'id' => CustomList::DEFAULT_FOLLOWING,
-            'listees_count' => $user->following()->count()
+            'listees_count' => $user->subscriptions()->count()
         ];
 
         // custom

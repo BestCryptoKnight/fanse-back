@@ -34,7 +34,7 @@ class ProfileController extends Controller
             });
             $image->save($path);
 
-            Storage::put('profile/' . $type . '/' . $user->id . '.jpg', file_get_contents($path));
+            Storage::put('profile/' . $type . '/' . $user->id . '.jpg' , file_get_contents($path));
             Storage::disk('local')->delete('tmp/' . $user->id . '-' . $type . '.' . $file->extension());
 
             $user->{$type} = 1;
@@ -62,11 +62,16 @@ class ProfileController extends Controller
             'name' => 'required|string|max:191',
             'bio' => 'nullable|string|max:1000',
             'location' => 'nullable|string|max:191',
-            'website' => 'nullable|string|url'
+            'website' => 'nullable|string|url',
+            'instagram' => 'nullable|string|url',
+            'twitter' => 'nullable|string|url',
+            'snapchat' => 'nullable|string|url',
+            'tiktok' => 'nullable|string|url'
+
         ]);
 
         $user->fill($request->only([
-            'username', 'name', 'bio', 'location', 'website'
+            'username', 'name', 'bio', 'location', 'website','instagram','twitter','snapchat','tiktok'
         ]));
         $user->save();
 

@@ -55,12 +55,11 @@ class PaymentController extends Controller
         $user->makeAuth();
         return response()->json($user);
     }
-
     public function bundleStore(Request $request)
     {
         $this->validate($request, [
-            'discount' => 'required|numeric|min:0|max:' . config('misc.payment.pricing.caps.discount'),
-            'months' => 'required|numeric|min:2|max:12',
+            'discount' => 'required|numeric|min:0|max:95',
+            'months' => 'required|numeric|min:1|max:12',
         ]);
         $user = auth()->user();
 

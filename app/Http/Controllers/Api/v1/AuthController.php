@@ -15,18 +15,20 @@ use Illuminate\Validation\Rule;
 use Log;
 use Hash;
 use Socialite;
+use App\Rules\Recaptcha;
 
 class AuthController extends Controller
 {
     public function signup(Request $request)
     {
-        $this->validate($request, [
+        $validated = $request->validate([
             'email' => 'required|email|unique:users,email',
             'password' => [
                 'required',
                 'min:8',
             ],
-            'name' => 'required|min:3'
+            'name' => 'required|min:3',
+            'captcha_token' => [new Recaptcha()]
         ], [
             'password' => __('validation.password_format')
         ]);

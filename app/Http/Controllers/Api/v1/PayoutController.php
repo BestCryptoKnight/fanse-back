@@ -14,6 +14,7 @@ class PayoutController extends Controller
 {
     public function index()
     {
+        
         $payouts = auth()->user()->payouts()->complete()->orderBy('updated_at', 'desc')->paginate(config('misc.page.size'));
         return response()->json($payouts);
     }

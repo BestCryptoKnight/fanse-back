@@ -35,7 +35,7 @@ class PostController extends Controller
     public function user(User $user, Request $request)
     {
         $current = auth()->user();
-        if ($current->id != $user->id) {
+        if ($current && ($current->id != $user->id)) {
             $type = Post::TYPE_ACTIVE;
         } else {
             $type = $request->input('type');
