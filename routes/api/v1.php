@@ -24,7 +24,6 @@ Route::prefix('auth')->group(function () {
 Route::post('process/{gateway}', 'PaymentController@process');
 Route::get('users/guest/{username}', 'UserController@show');
 Route::get('posts/guest/{user}', 'PostController@user');
-Route::post('posts/guest/{post}/{poll}/vote', 'PostController@vote');
 
 // check online status
 Route::get('userstatus', 'UserController@userStatus');
