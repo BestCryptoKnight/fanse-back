@@ -22,7 +22,7 @@ class Poll extends Model
     public function voted()
     {
         $user = auth()->user();
-        return $user ? $this->votes()->where('users.id', $user->id) : [];
+        return $user ? $this->votes()->where('users.id', $user->id) : $this->votes()->limit(0);
     }
 
     public function getHasVotedAttribute()
