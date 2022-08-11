@@ -212,10 +212,15 @@ class StripeProvider extends AbstractProvider
             $paymentModel->save();
             return ['info' => true];
         }
-
-        return [
-            'token' => $intent->client_secret
-        ];
+        if ($intent) {
+            return [ 
+                'token' => $intent->client_secret
+            ];
+        } else {
+            return [ 
+                'token' => $subscription->latest_invoice->payment_intent->client_secret
+            ];
+        }
     }
 
     public function unsubscribe(Subscription $subscription)
