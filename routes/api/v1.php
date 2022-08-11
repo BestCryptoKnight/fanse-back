@@ -21,6 +21,8 @@ Route::prefix('auth')->group(function () {
     Route::post('login', 'AuthController@login');
 });
 
+Route::post('sociallogin/{provider}', 'AuthController@socialSignup');
+Route::get('auth/{provider}/callback', 'OutController@index')->where('provider', '.*');
 Route::post('process/{gateway}', 'PaymentController@process');
 Route::get('users/guest/{username}', 'UserController@show');
 Route::get('posts/guest/{user}', 'PostController@user');

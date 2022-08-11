@@ -152,4 +152,27 @@ class AuthController extends Controller
     public function dolog()
     {
     }
+    
+    public function socialSignup($provider) {
+        $auth = Socialite::driver($provider)->stateless()->user();
+        $email = $auth->getEmail();
+        $name = $auth->getName();
+        $user = User::where('email', '=', $email)->first();
+        if ($user === null) {
+            $user = User::create([
+                'channel_type' => 0,
+                'channel_id' => $email,
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make($email)
+            ]);
+        } else {
+            $user->channel_type = 0;
+            $user->password = Hash::make($email);
+            $user->save();
+        }
+        $token = $user->createToken('main', $user->abilities);
+        $user->makeAuth();
+        return response()->json(['data' => $email, 'user' => $user, 'token' => $token->plainTextToken]);
+    }
 }
