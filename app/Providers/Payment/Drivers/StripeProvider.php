@@ -115,7 +115,33 @@ class StripeProvider extends AbstractProvider
 
     function subscribe(Request $request, PaymentModel $paymentModel, User $user, Bundle $bundle = null)
     {
-        $months = $bundle ? $bundle->months : 1;
+        if ($bundle) {
+            // Pay once for discounted months
+            $paramsForBundlePay = [
+                'amount' => $paymentModel->amount,
+                'currency' => config('misc.payment.currency.code'),
+                'metadata' => [
+                    'hash' => $paymentModel->hash
+                ],
+            ];
+            if ($paymentModel->user->mainPaymentMethod) {
+                $paramsForBundlePay['customer'] = $paymentModel->user->mainPaymentMethod->info['customer']['id'];
+                $paramsForBundlePay['payment_method'] = $paymentModel->user->mainPaymentMethod->info['method']['id'];
+                $paramsForBundlePay['off_session'] = true;
+                $paramsForBundlePay['confirm'] = true;
+            } else {
+                $customer = \Stripe\Customer::create();
+                $paramsForBundlePay['customer'] = $customer->id;
+                $paramsForBundlePay['setup_future_usage'] = 'off_session';
+            }
+
+            $intent = $this->getApi()->paymentIntents->create($paramsForBundlePay);
+        }
+
+        $subscriptionAmountPerMonth = $bundle
+            ? ($paymentModel->amount / $bundle->months) / (1 - $bundle->discount / 100)
+            : $paymentModel->amount;
+
         // find product or create one
         $product_id = 'prod_sub_' . $user->id;
         try {
@@ -132,8 +158,8 @@ class StripeProvider extends AbstractProvider
         foreach ($prices as $p) {
             if (
                 $p->recurring->interval == 'day'
-                && $p->recurring->interval_count == $months
-                && $p->unit_amount == $paymentModel->amount
+                && $p->recurring->interval_count == 1
+                && $p->unit_amount == $subscriptionAmountPerMonth
             ) {
                 $price = $p;
                 break;
@@ -142,11 +168,11 @@ class StripeProvider extends AbstractProvider
         if (!$price) {
             $price = $this->getApi()->prices->create([
                 'product' => $product_id,
-                'unit_amount' => $paymentModel->amount,
+                'unit_amount' => $subscriptionAmountPerMonth,
                 'currency' => config('misc.payment.currency.code'),
                 'recurring' => [
                     'interval' => 'day',
-                    'interval_count' => $months
+                    'interval_count' => 1
                 ]
             ]);
         }
@@ -169,6 +195,10 @@ class StripeProvider extends AbstractProvider
             $params['customer'] = $customer->id;
             $params['payment_behavior'] = 'default_incomplete';
             $params['expand'] = ['latest_invoice.payment_intent'];
+        }
+        if ($bundle) {
+            $params['trial_end'] = Carbon::now()->addMonths($bundle->months)->getTimestamp();
+            // $params['trial_period_days'] = 90;
         }
 
         $subscription = $this->getApi()->subscriptions->create($params);
