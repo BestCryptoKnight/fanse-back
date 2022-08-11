@@ -116,6 +116,7 @@ class StripeProvider extends AbstractProvider
     function subscribe(Request $request, PaymentModel $paymentModel, User $user, Bundle $bundle = null)
     {
         $intent = null;
+        $customer = null;
         if ($bundle) {
             // Pay once for discounted months
             $paramsForBundlePay = [
@@ -192,7 +193,9 @@ class StripeProvider extends AbstractProvider
             $params['default_payment_method'] = $paymentModel->user->mainPaymentMethod->info['method']['id'];
             $params['off_session'] = true;
         } else {
-            $customer = \Stripe\Customer::create();
+            if($customer == null) {
+                $customer = \Stripe\Customer::create();
+            }
             $params['customer'] = $customer->id;
             $params['payment_behavior'] = 'default_incomplete';
             $params['expand'] = ['latest_invoice.payment_intent'];
