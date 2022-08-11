@@ -115,6 +115,7 @@ class StripeProvider extends AbstractProvider
 
     function subscribe(Request $request, PaymentModel $paymentModel, User $user, Bundle $bundle = null)
     {
+        $intent = null;
         if ($bundle) {
             // Pay once for discounted months
             $paramsForBundlePay = [
@@ -157,7 +158,7 @@ class StripeProvider extends AbstractProvider
         $price = null;
         foreach ($prices as $p) {
             if (
-                $p->recurring->interval == 'day'
+                $p->recurring->interval == 'month'
                 && $p->recurring->interval_count == 1
                 && $p->unit_amount == $subscriptionAmountPerMonth
             ) {
@@ -171,7 +172,7 @@ class StripeProvider extends AbstractProvider
                 'unit_amount' => $subscriptionAmountPerMonth,
                 'currency' => config('misc.payment.currency.code'),
                 'recurring' => [
-                    'interval' => 'day',
+                    'interval' => 'month',
                     'interval_count' => 1
                 ]
             ]);
@@ -210,7 +211,7 @@ class StripeProvider extends AbstractProvider
         }
 
         return [
-            'token' => $subscription->latest_invoice->payment_intent->client_secret
+            'token' => $intent->client_secret
         ];
     }
 
