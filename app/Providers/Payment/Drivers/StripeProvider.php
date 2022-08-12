@@ -210,17 +210,11 @@ class StripeProvider extends AbstractProvider
             $paymentModel->status = PaymentModel::STATUS_COMPLETE;
             $paymentModel->token = $subscription->id;
             $paymentModel->save();
-            return ['info' => true];
+            // return ['info' => true];
         }
-        if ($intent) {
-            return [ 
-                'token' => $intent->client_secret
-            ];
-        } else {
-            return [ 
-                'token' => $subscription->latest_invoice->payment_intent->client_secret
-            ];
-        }
+        return [ 
+            'token' => 'token'
+        ];
     }
 
     public function unsubscribe(Subscription $subscription)
