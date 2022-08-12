@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api\v1;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Payment as PaymentGateway;
 use Log;
 use Cache;
 use Carbon\Carbon;
+use Symfony\Component\VarDumper\VarDumper;
 
 class UserController extends Controller
 {
@@ -28,7 +30,10 @@ class UserController extends Controller
     public function show(string $username)
     {
         $user = User::where('username', $username)->with('bundles')->firstOrFail();
+        $subscription = Subscription::where('sub_id', $user->id) -> where('user_id', auth()->user()->id) -> firstOrFail();        
         $user->makeVisible(['bio', 'location', 'website','instagram','twitter','snapchat','tiktok']);
+        $user = json_decode($user);
+        $user->active = $subscription['active'];
         return response()->json($user);
     }
 
