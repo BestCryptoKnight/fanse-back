@@ -210,10 +210,11 @@ class StripeProvider extends AbstractProvider
             $paymentModel->status = PaymentModel::STATUS_COMPLETE;
             $paymentModel->token = $subscription->id;
             $paymentModel->save();
-            // return ['info' => true];
+            return ['info' => true];
         }
-        return [ 
-            'token' => 'token'
+
+        return [
+            'token' => $intent->client_secret
         ];
     }
 
