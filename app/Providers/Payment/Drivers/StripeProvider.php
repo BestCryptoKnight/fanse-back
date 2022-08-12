@@ -213,8 +213,10 @@ class StripeProvider extends AbstractProvider
             return ['info' => true];
         }
 
-        return [
+        return $intent ? [
             'token' => $intent->client_secret
+        ] : [
+            'token' => $subscription->latest_invoice->payment_intent->client_secret
         ];
     }
 
