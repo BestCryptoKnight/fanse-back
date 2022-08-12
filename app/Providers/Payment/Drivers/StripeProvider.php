@@ -245,7 +245,8 @@ class StripeProvider extends AbstractProvider
                 $paymentModel = PaymentModel::where('hash', $intent->metadata->hash)->first();
             } else {
                 $invoice = $this->getApi()->invoices->retrieve($intent->invoice);
-                $paymentModel = PaymentModel::where('hash', $invoice->lines->data[0]->metadata->hash)->first();
+                $subscriptionItem = $this->getApi()->subscriptionItems->retrieve($invoice->lines->data[0]->subscription_item);
+                $paymentModel = PaymentModel::where('hash', $subscriptionItem->metadata->hash)->first();
             }
             if ($paymentModel) {
                 $paymentModel->status = PaymentModel::STATUS_COMPLETE;
