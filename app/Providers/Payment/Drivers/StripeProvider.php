@@ -204,13 +204,21 @@ class StripeProvider extends AbstractProvider
             $params['trial_end'] = Carbon::now()->addMonths($bundle->months)->getTimestamp();
             // $params['trial_period_days'] = 90;
         }
-
+        
         $subscription = $this->getApi()->subscriptions->create($params);
+        $info = $paymentModel->info;
+        $paymentModel->info = [
+            'sub_id' => $info['sub_id'],
+            'subscription_id' => $subscription->id
+        ];
         if ($subscription->status == 'active') {
             $paymentModel->status = PaymentModel::STATUS_COMPLETE;
             $paymentModel->token = $subscription->id;
+            
             $paymentModel->save();
             return ['info' => true];
+        } else {
+            $paymentModel->save();
         }
 
         return $intent ? [
@@ -223,7 +231,7 @@ class StripeProvider extends AbstractProvider
     public function unsubscribe(Subscription $subscription)
     {
         try {
-            $this->getApi()->subscriptions->cancel($subscription->token);
+            $this->getApi()->subscriptions->cancel($subscription->info['subscription_id']);
             return true;
         } catch (\Exception $e) {
         }

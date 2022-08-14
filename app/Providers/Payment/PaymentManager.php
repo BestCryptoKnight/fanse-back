@@ -139,6 +139,8 @@ class PaymentManager extends Manager
                         'bundle_id' => $bundle->id
                     ];
                 }
+                $info['payment_id'] = $payment->id;
+                $info['subscription_id'] = $payment->info['subscription_id'];
                 $subscription = $payment->user->subscriptions()->where('token', $payment->token)->first();
                 if (!$subscription) {
                     $subscription = $payment->user->subscriptions()->create([

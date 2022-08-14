@@ -31,11 +31,6 @@ class UserController extends Controller
     {
         $user = User::where('username', $username)->with('bundles')->firstOrFail();
         $user->makeVisible(['bio', 'location', 'website','instagram','twitter','snapchat','tiktok']);
-        if(Subscription::where('sub_id', $user->id)->first()){
-            $subscription = Subscription::where('sub_id', $user->id) -> where('user_id', auth()->user()->id) -> firstOrFail();        
-            $user = json_decode($user);
-            $user->active = $subscription['active'];
-        }
         return response()->json($user);
     }
 
