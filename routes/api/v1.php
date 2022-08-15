@@ -93,6 +93,7 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     // subscriptions
     Route::get('subscriptions', 'UserController@subscriptions');
     Route::delete('subscriptions/{user}', 'UserController@subscriptionDestroy');
+    Route::post('subscriptions/{user}', 'UserController@resubscription');
     Route::post('subscribe/{user}', 'UserController@subscribe');
 
     // messages

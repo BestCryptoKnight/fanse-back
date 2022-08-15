@@ -85,6 +85,27 @@ class UserController extends Controller
         return response()->json(['status' => false]);
     }
 
+    public function resubscription(User $user)
+    {
+        $sub = auth()->user()->subscriptions()->whereHas('sub', function ($q) use ($user) {
+            $q->where('id', $user->id);
+        })->firstOrFail();
+        if (!$sub->active && $sub->gateway) {
+            $gateway = PaymentGateway::driver($sub->gateway);
+            $gateway->resubscribe($sub);
+        } 
+
+        if ($sub->expires) {
+            $sub->active = true;
+            $sub->save();
+            $sub->refresh();
+            $sub->load('sub');
+            return response()->json($sub);
+        }
+        $sub->delete();
+        return response()->json(['status' => false]);
+    }
+
     public function dolog()
     {
         return;

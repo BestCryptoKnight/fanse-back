@@ -231,7 +231,21 @@ class StripeProvider extends AbstractProvider
     public function unsubscribe(Subscription $subscription)
     {
         try {
-            $this->getApi()->subscriptions->cancel($subscription->info['subscription_id']);
+            $this->getApi()->subscriptions->update($subscription->info['subscription_id'], [
+                'cancel_at_period_end' => true,
+            ]);
+            return true;
+        } catch (\Exception $e) {
+        }
+        return false;
+    }
+
+    public function resubscribe(Subscription $subscription)
+    {
+        try {
+            $this->getApi()->subscriptions->update($subscription->info['subscription_id'], [
+                'cancel_at_period_end' => false,
+            ]);
             return true;
         } catch (\Exception $e) {
         }
