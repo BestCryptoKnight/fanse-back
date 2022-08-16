@@ -21,7 +21,7 @@ class UserController extends Controller
             ->where('role', '<>', User::ROLE_ADMIN)
             ->whereDoesntHave('subscribers', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
-            })->take(30)->get();
+            })->get();
         return response()->json([
             'users' => $users
         ]);
