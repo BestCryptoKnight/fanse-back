@@ -203,7 +203,7 @@ class StripeProvider extends AbstractProvider
             $params['trial_end'] = Carbon::now()->addMonths($bundle->months)->getTimestamp();
             // $params['trial_period_days'] = 90;
         }
-        
+    
         $subscription = $this->getApi()->subscriptions->create($params);
         $info = $paymentModel->info;
         $paymentModel->info = [
@@ -216,7 +216,18 @@ class StripeProvider extends AbstractProvider
             
             $paymentModel->save();
             return ['info' => true];
-        } else {
+        } else if ($subscription->status == 'trialing') {
+            if ($paymentModel->user->mainPaymentMethod) {
+                $paymentModel->status = PaymentModel::STATUS_COMPLETE;
+                $paymentModel->token = $subscription->id; 
+                $paymentModel->save();
+                return ['info' => true];
+            } else {
+                $paymentModel->save();
+                return ['token' => $intent->client_secret];
+            }
+        }  
+        else {
             $paymentModel->save();
         }
 
