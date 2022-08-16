@@ -139,11 +139,10 @@ class StripeProvider extends AbstractProvider
 
             $intent = $this->getApi()->paymentIntents->create($paramsForBundlePay);
         }
-
-        $subscriptionAmountPerMonth = $bundle
+        
+        $subscriptionAmountPerMonth = round($bundle
             ? ($paymentModel->amount / $bundle->months) / (1 - $bundle->discount / 100)
-            : $paymentModel->amount;
-
+            : $paymentModel->amount);
         // find product or create one
         $product_id = 'prod_sub_' . $user->id;
         try {
