@@ -5,7 +5,7 @@ return [
     'tz' => 'Europe/Moscow',
 
     'page' => [
-        'size' => 20,
+        'size' => 40,
         'comments' => 5,
     ],
 
@@ -18,8 +18,8 @@ return [
     ],
 
     'media' => [
-        'mimes' => 'jpeg,jpg,png,mp4,mov,heic',
-        'maxsize' => 100000, // 100 mb
+        'mimes' => 'jpeg,jpg,png,mp4,mov,heic,HEIC,MOV',
+        'maxsize' => 80000000, // 100 mb
     ],
 
     'post' => [
@@ -36,12 +36,12 @@ return [
 
     'payment' => [
         'pricing' => [
-            'allow_paid_posts_for_paid_accounts' => false,
+            'allow_paid_posts_for_paid_accounts' => true,
             'caps' => [
-                'subscription' => 50,
-                'tip' => 100,
-                'post' => 100,
-                'message' => 100,
+                'subscription' => 60,
+                'tip' => 1000,
+                'post' => 1000,
+                'message' => 1000,
                 'discount' => 95,
             ]
         ],

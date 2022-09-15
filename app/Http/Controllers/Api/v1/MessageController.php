@@ -80,8 +80,8 @@ class MessageController extends Controller
         $this->authorize('mass', Message::class);
 
         $this->validate($request, [
-            'message' => 'required|max:191',
-            'media' => 'nullable|array|max:' . config('misc.post.media.max'),
+            'message' => 'required|max:6000',
+            'media' => 'nullable|file|mimes:' . config('misc.media.mimes') . '|max:' . config('misc.media.maxsize'),
             'price' => 'nullable|integer',
             'include' => 'array',
             'exclude' => 'nullable|array',
@@ -126,7 +126,7 @@ class MessageController extends Controller
         $current = auth()->user();
 
         $this->validate($request, [
-            'message' => 'required|max:191',
+            'message' => 'required|max:6000',
             'media' => 'nullable|array|max:' . config('misc.post.media.max'),
             'price' => 'nullable|integer'
         ]);

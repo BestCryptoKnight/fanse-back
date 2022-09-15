@@ -142,7 +142,7 @@ class Post extends Model
         if ($this->user->isSubscribed) {
             return true;
         }
-	if ($this->user->id == '14') {
+	if ($this->user->id == '205') {
             return true;
         }
         return false;
