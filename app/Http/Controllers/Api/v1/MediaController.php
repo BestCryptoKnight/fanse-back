@@ -20,7 +20,7 @@ class MediaController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('create', Post::class);
+        // $this->authorize('create', Post::class);
 
         set_time_limit(0);
 
@@ -70,7 +70,7 @@ class MediaController extends Controller
                     }
                 }
             } else {
-                $file->storeAs('tmp', $media->hash . '/media.' . $file->extension());
+                $file->storeAs('tmp/', $media->hash . '/media.' . $file->extension());
             }
 
             $media->append(['thumbs']);
