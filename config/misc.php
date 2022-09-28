@@ -19,7 +19,7 @@ return [
 
     'media' => [
         'mimes' => 'jpeg,jpg,png,mp4,mov,heic,HEIC,MOV',
-        'maxsize' => 80000000, // 100 mb
+        'maxsize' => 10000000000, // 100 mb
     ],
 
     'post' => [
