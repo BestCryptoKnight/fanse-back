@@ -22,7 +22,7 @@ class Media extends Model
     const STATUS_ACTIVE = 2;
 
     protected $fillable = [
-        'type', 'status', 'extension', 'info'
+        'type', 'status', 'extension', 'info', 'url'
     ];
 
     protected $visible = [
@@ -30,7 +30,7 @@ class Media extends Model
     ];
 
     protected $appends = [
-        'url', 'screenshot'
+        'screenshot'
     ];
 
     protected $casts = [
