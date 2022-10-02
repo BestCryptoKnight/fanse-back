@@ -22,7 +22,7 @@ class Media extends Model
     const STATUS_ACTIVE = 2;
 
     protected $fillable = [
-        'type', 'status', 'extension', 'info'
+        'type', 'status', 'extension', 'info', 'url'
     ];
 
     protected $visible = [
@@ -30,7 +30,7 @@ class Media extends Model
     ];
 
     protected $appends = [
-        'url', 'screenshot'
+        'screenshot'
     ];
 
     protected $casts = [
@@ -56,34 +56,9 @@ class Media extends Model
     {
         return $this->belongsTo(User::class);
     }
-
-    public function getUrlAttribute()
-    {
-        return Storage::url($this->path);
-    }
-
-    public function getPathAttribute()
-    {
-        return ($this->status == self::STATUS_TMP ? $this->tmpPath : $this->pubPath)
-            . '/media.' . $this->extension;
-    }
-
-    public function getTmpPathAttribute()
-    {
-        return 'tmp/' . $this->hash;
-    }
-
-    public function getPubPathAttribute()
-    {
-        return 'media/' . $this->hash;
-    }
-
+    
     public function getScreenshotAttribute()
     {
-        if ($this->status == self::STATUS_ACTIVE && $this->type == self::TYPE_VIDEO) {
-            return Storage::url(($this->status == self::STATUS_TMP ? $this->tmpPath : $this->pubPath)
-                . '/thumb_' . $this->info['screenshot'] . '.png');
-        }
         return null;
     }
 
@@ -108,10 +83,6 @@ class Media extends Model
     public function publish()
     {
         if ($this->status == self::STATUS_TMP) {
-            Storage::move(
-                $this->tmpPath,
-                $this->pubPath
-            );
             $this->status = self::STATUS_ACTIVE;
             $this->save();
         }
