@@ -56,9 +56,34 @@ class Media extends Model
     {
         return $this->belongsTo(User::class);
     }
-    
+
+    public function getUrlAttribute()
+    {
+        return 'https://d1r1kdez04i1xw.cloudfront.net/'.$this->path;
+    }
+
+    public function getPathAttribute()
+    {
+        return ($this->status == self::STATUS_TMP ? $this->tmpPath : $this->pubPath)
+            . '/media.' . $this->extension;
+    }
+
+    public function getTmpPathAttribute()
+    {
+        return 'tmp/' . $this->hash;
+    }
+
+    public function getPubPathAttribute()
+    {
+        return 'media/' . $this->hash;
+    }
+
     public function getScreenshotAttribute()
     {
+        if ($this->status == self::STATUS_ACTIVE && $this->type == self::TYPE_VIDEO) {
+            return ($this->status == self::STATUS_TMP ? $this->tmpPath : $this->pubPath)
+                . '/thumb_' . $this->info['screenshot'] . '.png';
+        }
         return null;
     }
 
@@ -66,7 +91,7 @@ class Media extends Model
     {
         if ($this->type == self::TYPE_VIDEO) {
             $thumbs = [];
-            $files = Storage::files($this->status == self::STATUS_TMP ? $this->tmpPath : $this->pubPath);
+            $files = Storage::disk('s3')->files($this->status == self::STATUS_TMP ? $this->tmpPath : $this->pubPath);
             foreach ($files as $f) {
                 if (preg_match('/thumb_([0-9]+)\.png/', $f, $matches)) {
                     $thumbs[] = [
@@ -83,6 +108,10 @@ class Media extends Model
     public function publish()
     {
         if ($this->status == self::STATUS_TMP) {
+            Storage::disk('s3')::move(
+                $this->tmpPath,
+                $this->pubPath
+            );
             $this->status = self::STATUS_ACTIVE;
             $this->save();
         }
