@@ -59,7 +59,7 @@ class Media extends Model
 
     public function getUrlAttribute()
     {
-        return Storage::url($this->path);
+        return 'https://d1r1kdez04i1xw.cloudfront.net/'.$this->path;
     }
 
     public function getPathAttribute()

@@ -7,7 +7,7 @@ use App\Models\Media;
 use Illuminate\Http\Request;
 use FFMpeg;
 use Log;
-use Storage;
+use Illuminate\Support\Facades\Storage;
 
 class MediaController extends Controller
 {
@@ -52,6 +52,8 @@ class MediaController extends Controller
             ]);
             if ($type == Media::TYPE_VIDEO) {
                 $file->storeAs('tmp', $media->hash . '/media.' . $file->extension());
+                $filepath = 'tmp/'.$media->hash. '/media.' . $file->extension();
+                Storage::disk('s3')->put($filepath, file_get_contents($file));
                 $mediaOpener = FFMpeg::open('tmp/' . $media->hash . '/media.' . $file->extension());
                 $durationInSeconds = $mediaOpener->getDurationInSeconds();
 
@@ -71,6 +73,8 @@ class MediaController extends Controller
                 }
             } else {
                 $file->storeAs('tmp/', $media->hash . '/media.' . $file->extension());
+                $filepath = 'tmp/'.$media->hash. '/media.' . $file->extension();
+                Storage::disk('s3')->put($filepath, file_get_contents($file));
             }
 
             $media->append(['thumbs']);
