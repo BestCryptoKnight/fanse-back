@@ -22,7 +22,7 @@ class Media extends Model
     const STATUS_ACTIVE = 2;
 
     protected $fillable = [
-        'type', 'status', 'extension', 'info'
+        'type', 'status', 'extension', 'info', 'url'
     ];
 
     protected $visible = [
@@ -30,7 +30,7 @@ class Media extends Model
     ];
 
     protected $appends = [
-        'url', 'screenshot'
+        'screenshot'
     ];
 
     protected $casts = [
@@ -81,8 +81,8 @@ class Media extends Model
     public function getScreenshotAttribute()
     {
         if ($this->status == self::STATUS_ACTIVE && $this->type == self::TYPE_VIDEO) {
-            return Storage::url(($this->status == self::STATUS_TMP ? $this->tmpPath : $this->pubPath)
-                . '/thumb_' . $this->info['screenshot'] . '.png');
+            return ($this->status == self::STATUS_TMP ? $this->tmpPath : $this->pubPath)
+                . '/thumb_' . $this->info['screenshot'] . '.png';
         }
         return null;
     }
@@ -91,7 +91,7 @@ class Media extends Model
     {
         if ($this->type == self::TYPE_VIDEO) {
             $thumbs = [];
-            $files = Storage::files($this->status == self::STATUS_TMP ? $this->tmpPath : $this->pubPath);
+            $files = Storage::disk('s3')->files($this->status == self::STATUS_TMP ? $this->tmpPath : $this->pubPath);
             foreach ($files as $f) {
                 if (preg_match('/thumb_([0-9]+)\.png/', $f, $matches)) {
                     $thumbs[] = [
@@ -108,7 +108,7 @@ class Media extends Model
     public function publish()
     {
         if ($this->status == self::STATUS_TMP) {
-            Storage::move(
+            Storage::disk('s3')::move(
                 $this->tmpPath,
                 $this->pubPath
             );
