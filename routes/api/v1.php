@@ -122,3 +122,6 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     // stripe
     Route::post('stripe/intent', 'StripeController@intent');
 });
+
+//Audio
+Route::post('audio/save', 'AudioFileController@saveFile');

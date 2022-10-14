@@ -36,6 +36,7 @@ class User extends Authenticatable
         'channel_type',
         'channel_id',
         'bio',
+        'audio_bio',
         'location',
         'website',
         'price',
@@ -82,7 +83,7 @@ class User extends Authenticatable
     public function makeAuth()
     {
         $this->refresh()
-            ->makeVisible(['bio', 'location', 'website', 'email'])
+            ->makeVisible(['bio', 'audio_bio', 'location', 'website', 'email'])
             ->load(['bundles']);
     }
 
