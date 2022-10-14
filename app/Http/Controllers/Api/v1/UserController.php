@@ -30,7 +30,7 @@ class UserController extends Controller
     public function show(string $username)
     {
         $user = User::where('username', $username)->with('bundles')->firstOrFail();
-        $user->makeVisible(['bio', 'location', 'website','instagram','twitter','snapchat','tiktok']);
+        $user->makeVisible(['bio', 'audio_bio', 'location', 'website','instagram','twitter','snapchat','tiktok']);
         return response()->json($user);
     }
 
