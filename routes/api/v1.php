@@ -125,3 +125,4 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
 
 //Audio
 Route::post('audio/save', 'AudioFileController@saveFile');
+Route::post('audio/delete', 'AudioFileController@deleteFile');

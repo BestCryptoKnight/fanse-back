@@ -21,4 +21,20 @@ class AudioFileController extends Controller
             'audio' => "/bio_voice/" . $generated_new_name
         ]);
     }
+
+    public function deleteFile(Request $request)
+    {
+        $file_name = str_replace("\\", "", $request->fileName);
+        if(substr($file_name, 0, strlen("/bio_voice/")) === "/bio_voice/")
+        {
+            Storage::disk('s3')->delete($file_name);
+            return response()->json([
+                'response' => $file_name
+            ]);
+        }
+
+        return response()->json([
+            'response' => "Unauthorized Request"
+        ]);
+    }
 }
