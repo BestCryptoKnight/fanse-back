@@ -52,7 +52,7 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::post('posts/{post}/like', 'PostController@like');
     Route::get('posts/user/{user}', 'PostController@user');
     // media
-    Route::apiResource('media', 'MediaController')->only(['store', 'destroy']);
+    Route::apiResource('media', 'MediaController')->only(['store', 'destroy', 'index']);
 
     // comments
     Route::get('comments/{post}', 'CommentController@index');
