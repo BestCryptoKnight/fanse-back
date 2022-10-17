@@ -13,6 +13,23 @@ class MediaController extends Controller
 {
 
     /**
+     * Retrieve all media resources as a list of URLs.
+     *
+     * @param  \App\Models\Media  $media
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Media $media)
+    {
+        $all_media = [];
+        $user = auth()->user();
+        $media = Media::where('user_id', $user->id)->get();
+        foreach ($media as $med) {
+            array_push($all_media, $media->getUrlAttribute());
+        }
+        return response()->json(['media' => $all_media]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
