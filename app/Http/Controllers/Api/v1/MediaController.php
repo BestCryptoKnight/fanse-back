@@ -15,18 +15,13 @@ class MediaController extends Controller
     /**
      * Retrieve all media resources as a list of URLs.
      *
-     * @param  \App\Models\Media  $media
      * @return \Illuminate\Http\Response
      */
-    public function index(Media $media)
+    public function index()
     {
-        $all_media = [];
         $user = auth()->user();
-        $media = Media::where('user_id', $user->id)->get();
-        foreach ($media as $med) {
-            array_push($all_media, $media->getUrlAttribute());
-        }
-        return response()->json(['media' => $all_media]);
+        $media = Media::where('user_id', $user->id)->paginate(config('misc.page.size'));
+        return response()->json(['media' => $media]);
     }
 
     /**
