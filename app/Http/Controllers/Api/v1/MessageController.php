@@ -81,7 +81,6 @@ class MessageController extends Controller
 
         $this->validate($request, [
             'message' => 'required|max:6000',
-            'media' => 'nullable|file|mimes:' . config('misc.media.mimes') . '|max:' . config('misc.media.maxsize'),
             'price' => 'nullable|integer',
             'include' => 'array',
             'exclude' => 'nullable|array',
