@@ -20,7 +20,7 @@ class MediaController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $media = Media::where('user_id', $user->id)->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+        $media = Media::where([['user_id', '=', $user->id], ['status', '=', 2]])->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
         return response()->json(['media' => $media]);
     }
 
