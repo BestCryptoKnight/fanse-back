@@ -61,6 +61,7 @@ class ProfileController extends Controller
             'username' => 'required|regex:/^[a-zA-Z0-9-_]+$/u|between:4,24|unique:App\Models\User,username,' . $user->id,
             'name' => 'required|string|max:191',
             'bio' => 'nullable|string|max:1000',
+            'audio_bio' => 'nullable|string|max:1000',
             'location' => 'nullable|string|max:191',
             'website' => 'nullable|string|url',
             'instagram' => 'nullable|string|url',
@@ -71,7 +72,7 @@ class ProfileController extends Controller
         ]);
 
         $user->fill($request->only([
-            'username', 'name', 'bio', 'location', 'website','instagram','twitter','snapchat','tiktok'
+            'username', 'name', 'bio', 'audio_bio', 'location', 'website','instagram','twitter','snapchat','tiktok'
         ]));
         $user->save();
 

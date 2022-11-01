@@ -13,6 +13,18 @@ class MediaController extends Controller
 {
 
     /**
+     * Retrieve all media resources as a list of URLs.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $user = auth()->user();
+        $media = Media::where([['user_id', '=', $user->id], ['status', '=', 2]])->orderBy('created_at', 'desc')->paginate(config('misc.page.size'));
+        return response()->json(['media' => $media]);
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -20,28 +32,35 @@ class MediaController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('create', Post::class);
+        // $this->authorize('create', Post::class);
 
         set_time_limit(0);
 
+        $this->validate($request, [
+            'media' => 'required|file|mimes:' . config('misc.media.mimes') . '|max:' . config('misc.media.maxsize')
+        ]);
+
         $user = auth()->user();
-        $urls = $request->all();
-        foreach ($urls as $url){
-            $ext = explode(".", $url)[1];
-            if ($ext == "jpeg" || $ext == "jpg" || $ext == "png" || $ext == "heic" || $ext == "HEIC"){
-                $type = 0;
-            } else if ($ext == "mp4" || $ext == "mov" || $ext == "MOV"){
-                $type = 1;
-            }
+
+        // video
+        $file = $request->file('media');
+        $mime = $file->getMimeType();
+
+        $type = null;
+        $media = null;
+
+        if (strstr($mime, 'video') !== false) {
+            $type = Media::TYPE_VIDEO;
+        } else if (strstr($mime, 'audio') !== false) {
+            $type = Media::TYPE_AUDIO;
+        } else if (strstr($mime, 'image') !== false) {
+            $type = Media::TYPE_IMAGE;
+        }
+
+        if ($type !== null) {
             $media = $user->media()->create([
                 'type' => $type,
-                'extension' => $ext,
-                'url' => "https://"
-                    . env("AWS_BUCKET")
-                    . ".s3."
-                    . env("AWS_DEFAULT_REGION")
-                    . ".amazonaws.com/media/"
-                    . $url
+                'extension' => $file->extension()
             ]);
             if ($type == Media::TYPE_VIDEO) {
                 $file->storeAs('tmp', $media->hash . '/media.' . $file->extension());
@@ -70,44 +89,8 @@ class MediaController extends Controller
                 Storage::disk('s3')->put($filepath, file_get_contents($file));
             }
 
-        // if (strstr($mime, 'video') !== false) {
-        //     $type = Media::TYPE_VIDEO;
-        // } else if (strstr($mime, 'audio') !== false) {
-        //     $type = Media::TYPE_AUDIO;
-        // } else if (strstr($mime, 'image') !== false) {
-        //     $type = Media::TYPE_IMAGE;
-        // }
-
-        // if ($type !== null) {
-        //     $media = $user->media()->create([
-        //         'type' => $type,
-        //         'extension' => $file->extension()
-        //     ]);
-        //     if ($type == Media::TYPE_VIDEO) {
-        //         $file->storeAs('tmp', $media->hash . '/media.' . $file->extension());
-        //         $mediaOpener = FFMpeg::open('tmp/' . $media->hash . '/media.' . $file->extension());
-        //         $durationInSeconds = $mediaOpener->getDurationInSeconds();
-
-        //         $num = 6;
-        //         for ($i = 0; $i < $num; $i++) {
-        //             try {
-        //                 $tstamp = round(($durationInSeconds / $num) * $i);
-        //                 if ($tstamp < 1) $tstamp = 1;
-        //                 if ($tstamp > $durationInSeconds - 1) $tstamp = $durationInSeconds - 1;
-        //                 $mediaOpener = $mediaOpener->getFrameFromSeconds($tstamp)
-        //                     ->export()
-        //                     ->save("tmp/" . $media->hash . "/thumb_{$i}.png");
-        //             } catch (\Exception $e) {
-        //                 //Log::debug($e->getMessage());
-        //                 $mediaOpener = FFMpeg::open('tmp/' . $media->hash . '/media.' . $file->extension());
-        //             }
-        //         }
-        //     } else {
-        //         $file->storeAs('tmp', $media->hash . '/media.' . $file->extension());
-        //     }
-
-        //     $media->append(['thumbs']);
-        // }
+            $media->append(['thumbs']);
+        }
 
 
         return response()->json($media);

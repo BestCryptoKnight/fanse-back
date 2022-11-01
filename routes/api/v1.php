@@ -52,7 +52,7 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     Route::post('posts/{post}/like', 'PostController@like');
     Route::get('posts/user/{user}', 'PostController@user');
     // media
-    Route::apiResource('media', 'MediaController')->only(['store', 'destroy']);
+    Route::apiResource('media', 'MediaController')->only(['store', 'destroy', 'index']);
 
     // comments
     Route::get('comments/{post}', 'CommentController@index');
@@ -122,3 +122,7 @@ Route::middleware(['auth:sanctum', 'abilities:user'])->group(function () {
     // stripe
     Route::post('stripe/intent', 'StripeController@intent');
 });
+
+//Audio
+Route::post('audio/save', 'AudioFileController@saveFile');
+Route::post('audio/delete', 'AudioFileController@deleteFile');
