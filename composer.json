@@ -20,6 +20,7 @@
         "laravel/sanctum": "^2.13",
         "laravel/socialite": "^5.2",
         "laravel/tinker": "^2.6",
+        "league/flysystem-aws-s3-v3": "*",
         "nesbot/carbon": "^2.53",
         "paypal/rest-api-sdk-php": "^1.14",
         "pbmedia/laravel-ffmpeg": "^7.5",
